@@ -19,7 +19,7 @@ window whose mouse input region follows the visible pixels.
 On Fedora:
 
 ```bash
-sudo dnf install git python3-gobject python3-cairo gtk4 gtk4-layer-shell \
+sudo dnf install git python3-gobject python3-cairo gobject-introspection gtk4 gtk4-layer-shell \
   python3-pillow pulseaudio-utils
 ```
 

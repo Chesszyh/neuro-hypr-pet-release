@@ -19,7 +19,7 @@ Shimeji `actions.xml` / `behaviors.xml`。每只桌宠使用一个与图片大�
 Fedora 上可安装：
 
 ```bash
-sudo dnf install git python3-gobject python3-cairo gtk4 gtk4-layer-shell \
+sudo dnf install git python3-gobject python3-cairo gobject-introspection gtk4 gtk4-layer-shell \
   python3-pillow pulseaudio-utils
 ```
 
