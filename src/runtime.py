@@ -178,6 +178,7 @@ class PetRuntime:
         self._self_destruct_emitted = False
         self._breed_events: list[BreedEvent] = []
         self.allow_split = True
+        self.split_probability: float | None = None
         self._breed_emitted = False
         self._interaction_events: list[InteractionEvent] = []
         self.world: PetWorld | None = None
@@ -2073,7 +2074,7 @@ class PetRuntime:
         for behavior in self.behavior_catalog.behaviors.values():
             if not self.allow_split and self._is_split_action(behavior.action_name):
                 continue
-            if behavior.frequency <= 0:
+            if behavior.frequency <= 0 and not (self.split_probability is not None and self._is_split_action(behavior.action_name)):
                 continue
             if behavior.action_name not in self.catalog.actions:
                 continue
@@ -2081,7 +2082,7 @@ class PetRuntime:
                 continue
             if not self._behavior_condition_matches(behavior.condition):
                 continue
-            weighted_actions.append((behavior.name, behavior.action_name, behavior.frequency))
+            weighted_actions.append((behavior.name, behavior.action_name, max(1, behavior.frequency)))
         if previous_behavior is None:
             return weighted_actions
         previous = self.behavior_catalog.behaviors.get(previous_behavior)
@@ -2092,7 +2093,7 @@ class PetRuntime:
         for behavior in previous.next_behaviors:
             if not self.allow_split and self._is_split_action(behavior.action_name):
                 continue
-            if behavior.frequency <= 0:
+            if behavior.frequency <= 0 and not (self.split_probability is not None and self._is_split_action(behavior.action_name)):
                 continue
             if behavior.action_name not in self.catalog.actions:
                 continue
@@ -2100,7 +2101,7 @@ class PetRuntime:
                 continue
             if not self._behavior_condition_matches(behavior.condition):
                 continue
-            weighted_actions.append((behavior.name, behavior.action_name, behavior.frequency))
+            weighted_actions.append((behavior.name, behavior.action_name, max(1, behavior.frequency)))
         return weighted_actions
 
     def _is_split_action(self, name: str) -> bool:
@@ -2135,11 +2136,30 @@ class PetRuntime:
         if not weighted_actions:
             return None
         alternatives = [item for item in weighted_actions if item[0] != previous_behavior]
-        if alternatives:
+        if alternatives and self.split_probability is None:
             weighted_actions = alternatives
-        candidates = [(name, action_name) for name, action_name, _weight in weighted_actions]
-        weights = [weight for _name, _action_name, weight in weighted_actions]
-        return random.choices(candidates, weights=weights, k=1)[0]
+        return self._select_autonomous_behavior(weighted_actions, random)
+
+    def _select_autonomous_behavior(self, candidates, rng):
+        if self.split_probability is not None:
+            split = [item for item in candidates if self._is_split_action(item[1])]
+            other = [item for item in candidates if not self._is_split_action(item[1])]
+            probability = self.split_probability / 100
+            if split:
+                if probability <= 0:
+                    candidates = other
+                elif probability >= 1:
+                    candidates = split
+                else:
+                    candidates = split if rng.random() < probability else other
+        if not candidates:
+            return None
+        choices = [name for name, _action, _weight in candidates]
+        if hasattr(rng, "choices"):
+            name = rng.choices(choices, weights=[weight for _name, _action, weight in candidates], k=1)[0]
+        else:
+            name = rng.choice(choices)
+        return next((name, action) for candidate, action, _weight in candidates if candidate == name)
 
     def _fallback_idle_actions(self) -> list[str]:
         if self._work_area_wall_edge(tolerance=EDGE_TOLERANCE) in {"left", "right"}:
@@ -2157,13 +2177,10 @@ class PetRuntime:
             return False
         behavior_candidates = self._weighted_behavior_candidates()
         if behavior_candidates:
-            candidates = [name for name, _action_name, _weight in behavior_candidates]
-            weights = [weight for _name, _action_name, weight in behavior_candidates]
-            if hasattr(rng, "choices"):
-                name = rng.choices(candidates, weights=weights, k=1)[0]
-            else:
-                name = rng.choice(candidates)
-            action_name = next(action_name for candidate_name, action_name, _weight in behavior_candidates if candidate_name == name)
+            selected = self._select_autonomous_behavior(behavior_candidates, rng)
+            if selected is None:
+                return False
+            name, action_name = selected
             self._start_idle_behavior(name, action_name, rng)
             return True
         weighted_actions = self._weighted_idle_actions()

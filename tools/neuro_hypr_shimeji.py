@@ -73,7 +73,7 @@ from src.hyprland import (
     clamp_window_rect,
 )
 from src.manager import PetManager, preferences_path, save_selection
-from src.manager_ui import ManagerPopup
+from src.manager_ui import ManagerPopup, SplitControls
 from src.window_effects import animate_minimize
 from src.tray import PetTray
 from src.runtime import PetRuntime, PetWorld, Rect, RuntimeConfig
@@ -334,10 +334,10 @@ def pet_world_for_application(application: Gtk.Application) -> PetWorld:
     return world
 
 
-def remember_window(application: Gtk.Application, window: Gtk.Window) -> None:
+def remember_window(application: Gtk.Application, window: Gtk.Window, *, parent=None) -> None:
     manager = getattr(application, "_neuro_hypr_manager", None)
     if manager is not None:
-        manager.register(window)
+        manager.register(window, parent=parent)
         return
     windows = getattr(application, "_neuro_hypr_shimeji_windows", None)
     if windows is None:
@@ -887,7 +887,7 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
             child._sync_monitors()
             child.transient = event.transient
             child._apply_geometry()
-            remember_window(application, child)
+            remember_window(application, child, parent=self)
             child.start()
 
     def _on_close_request(self, _window: Gtk.Window) -> bool:
@@ -929,6 +929,10 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
             resummon = Gtk.Button(label="再召唤同款")
             resummon.connect("clicked", lambda _button: manager.resummon(self))
             card.append(resummon)
+            card.append(Gtk.Label(label="这只桌宠 · 分裂", xalign=0))
+            card.append(SplitControls(manager,
+                lambda: (self.runtime.allow_split, self.runtime.split_probability),
+                lambda enabled, probability: manager.set_pet_split(self, enabled, probability)))
         section = Gtk.Label(label="动作", xalign=0)
         section.add_css_class("neuro-menu-section")
         card.append(section)

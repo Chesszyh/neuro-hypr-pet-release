@@ -90,10 +90,21 @@ remain checked. Image-set choices are saved automatically to
 `~/.config/neuro-hypr-pet/preferences.json`, respecting `XDG_CONFIG_HOME`.
 Close the popup with its close button or Esc.
 
-**允许分裂成两只** (Allow splitting into two) controls automatic and manual
-splitting (`SplitIntoTwo` / `Glitch`) for all pets. It is enabled by default and saved with
-your preferences. Disabling it blocks new splits, including pending births;
-existing pets and other summon actions are unaffected.
+Right-click a pet to change that pet's split permission and automatic split
+probability. The tray's **桌宠** (Pets) tab edits the same per-pet settings,
+including separate settings for multiple pets of the same image set.
+**应用到当前全部** (Apply to all current pets) changes the current pets once;
+individual edits afterward remain independent. **新召唤默认值** (New summon
+defaults) is saved for future summons and does not change existing pets.
+Per-pet overrides last for that pet's lifetime; split children inherit their
+parent's settings, while fresh summons use the saved defaults.
+
+**使用素材概率** (Use asset probability) preserves the XML behavior weights.
+Turn it off to set a 0–100% chance of splitting at each autonomous action choice,
+when the XML conditions permit splitting. At 0%, manual splitting is still
+available; disabling **允许分裂** (Allow splitting) blocks both automatic and
+manual splits, including pending split births. Manual splitting is unaffected
+by the percentage. Other summon actions are unaffected.
 
 Cursor following makes regular pets follow the cursor's horizontal position
 along the screen floor or a window's top edge, then stop nearby. Toggle it off

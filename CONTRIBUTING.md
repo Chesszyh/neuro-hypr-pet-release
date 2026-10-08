@@ -57,6 +57,13 @@ Comments should explain non-obvious constraints. Keep the English and Chinese
 README aligned when changing setup or user-visible behavior, and update the
 relevant tests.
 
+## Continuous integration
+
+[Tests](.github/workflows/tests.yml) runs on pushes to `main`, pull requests,
+and manual dispatch. It installs the system GTK and Python dependencies in
+Fedora and runs the test suite without artwork. Optional extended-collection
+tests are skipped; desktop interaction still needs a Hyprland trial.
+
 ## Licenses and third-party material
 
 Contributions to the project's Python code, tests, and documentation use the

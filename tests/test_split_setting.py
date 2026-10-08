@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from src.manager import PetManager
 from src.runtime import PetRuntime, Rect, RuntimeConfig
@@ -70,16 +71,70 @@ class SplitSettingTest(unittest.TestCase):
         self.assertEqual(self.runtime.pop_breed_events(), [])
         self.assertEqual(self.breed("Companion")[0].image_set, "Other")
 
-    def test_manager_applies_and_remembers_setting_for_existing_and_new_pets(self):
+    def test_individual_batch_and_defaults_do_not_override_each_other(self):
         path = self.root / "preferences.json"
         manager = PetManager(SimpleNamespace(), self.root, lambda *_: None, selection_path=path)
-        pet = SimpleNamespace(runtime=self.runtime, transient=False)
-        manager.register(pet)
-        manager.set_allow_split(False)
-        self.assertFalse(pet.runtime.allow_split)
-        reloaded = PetManager(SimpleNamespace(), self.root, lambda *_: None, selection_path=path)
+        first = SimpleNamespace(runtime=self.runtime, transient=False)
         second = SimpleNamespace(runtime=self.make_runtime(), transient=False)
-        reloaded.register(second)
-        self.assertFalse(second.runtime.allow_split)
-        reloaded.set_allow_split(True)
+        manager.register(first)
+        manager.register(second)
+        manager.set_pet_split(first, False, 25)
+        self.assertFalse(first.runtime.allow_split)
         self.assertTrue(second.runtime.allow_split)
+        self.assertIsNone(second.runtime.split_probability)
+        manager.set_split_defaults(False, 10)
+        self.assertTrue(second.runtime.allow_split)
+        manager.apply_split_to_all(True, 40)
+        self.assertEqual(first.runtime.split_probability, 40)
+        self.assertEqual(second.runtime.split_probability, 40)
+        manager.set_pet_split(first, False, 5)
+        self.assertTrue(second.runtime.allow_split)
+        self.assertEqual(second.runtime.split_probability, 40)
+        reloaded = PetManager(SimpleNamespace(), self.root, lambda *_: None, selection_path=path)
+        new = SimpleNamespace(runtime=self.make_runtime(), transient=False)
+        reloaded.register(new)
+        self.assertFalse(new.runtime.allow_split)
+        self.assertEqual(new.runtime.split_probability, 10)
+        child = SimpleNamespace(runtime=self.make_runtime(), transient=False)
+        manager.register(child, parent=second)
+        self.assertTrue(child.runtime.allow_split)
+        self.assertEqual(child.runtime.split_probability, 40)
+
+    def test_zero_probability_only_disables_autonomous_splitting(self):
+        self.runtime.split_probability = 0
+        self.runtime.start_action("Stand")
+        self.assertTrue(self.runtime.start_idle_action())
+        self.assertEqual(self.runtime.action_name, "Stand")
+        self.assertEqual(self.runtime._choose_next_behavior("Stand"), ("Stand", "Stand"))
+        self.assertTrue(self.runtime.start_manual_behavior("SplitIntoTwo"))
+        self.runtime.allow_split = False
+        self.assertFalse(self.runtime.start_manual_behavior("SplitIntoTwo"))
+
+    def test_full_probability_selects_split_at_both_decision_points(self):
+        self.runtime.split_probability = 100
+        self.runtime.start_action("Stand")
+        self.assertTrue(self.runtime.start_idle_action())
+        self.assertEqual(self.runtime.action_name, "Divide")
+        self.assertEqual(self.runtime._choose_next_behavior("SplitIntoTwo"), ("SplitIntoTwo", "SplitIntoTwo"))
+
+    def test_probability_boundary_and_xml_condition(self):
+        self.runtime.split_probability = 25
+        candidates = self.runtime._weighted_behavior_candidates()
+        rng = Mock()
+        rng.choices.side_effect = lambda choices, **kwargs: [choices[0]]
+        rng.random.return_value = 0.249
+        self.assertEqual(self.runtime._select_autonomous_behavior(candidates, rng)[0], "SplitIntoTwo")
+        rng.random.return_value = 0.25
+        self.assertEqual(self.runtime._select_autonomous_behavior(candidates, rng)[0], "Stand")
+        (self.conf / "behaviors.xml").write_text(BEHAVIORS.replace('Name="SplitIntoTwo" Frequency="1"', 'Name="SplitIntoTwo" Frequency="1" Condition="false"'))
+        self.runtime = self.make_runtime()
+        self.runtime.split_probability = 100
+        self.assertEqual(self.runtime._choose_next_behavior("Stand"), ("Stand", "Stand"))
+
+    def test_source_probability_keeps_xml_weights(self):
+        candidates = [("Stand", "Stand", 50), ("SplitIntoTwo", "SplitIntoTwo", 5)]
+        rng = Mock()
+        rng.choices.return_value = ["Stand"]
+        self.runtime._select_autonomous_behavior(candidates, rng)
+        self.assertEqual(rng.choices.call_args.kwargs["weights"], [50, 5])
+        rng.random.assert_not_called()

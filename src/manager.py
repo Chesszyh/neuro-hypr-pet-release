@@ -26,12 +26,13 @@ def load_selection(path: Path, available: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(name for name in data["image_sets"] if name in available)
 
 
-def save_selection(path: Path, names: tuple[str, ...], *, window_speed: float | None = None, allow_split: bool | None = None) -> None:
+def save_selection(path: Path, names: tuple[str, ...], *, window_speed: float | None = None, allow_split: bool | None = None, split_probability: float | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     data["image_sets"] = names
     if allow_split is not None:
         data["allow_split"] = allow_split
+        data["split_probability"] = split_probability
     if window_speed is not None:
         data["window_speed"] = window_speed
     temporary = path.with_suffix(".tmp")
@@ -50,6 +51,7 @@ class PetManager:
         self.selected = load_selection(self.selection_path, self.available)
         self.window_speed = float(json.loads(self.selection_path.read_text()).get("window_speed", 1.5)) if self.selection_path.exists() else 1.5
         self.allow_split = json.loads(self.selection_path.read_text()).get("allow_split", True) if self.selection_path.exists() else True
+        self.split_probability = json.loads(self.selection_path.read_text()).get("split_probability") if self.selection_path.exists() else None
         self.paused = False
         self.following = False
         self.listeners: list[Callable] = []
@@ -64,7 +66,7 @@ class PetManager:
         return self.application._neuro_hypr_shimeji_windows
 
     def changed(self) -> None:
-        for listener in self.listeners:
+        for listener in list(self.listeners):
             listener()
 
     def set_selection(self, names) -> None:
@@ -82,8 +84,9 @@ class PetManager:
         pet.start()
         return pet
 
-    def register(self, pet) -> None:
-        pet.runtime.allow_split = self.allow_split
+    def register(self, pet, *, parent=None) -> None:
+        pet.runtime.allow_split = parent.runtime.allow_split if parent else self.allow_split
+        pet.runtime.split_probability = parent.runtime.split_probability if parent else self.split_probability
         pet.paused = self.paused
         pet.following_cursor = self.following and not pet.transient
         self.pets.append(pet)
@@ -107,11 +110,21 @@ class PetManager:
         save_selection(self.selection_path, self.selected, window_speed=self.window_speed)
         self.changed()
 
-    def set_allow_split(self, enabled: bool) -> None:
+    def set_split_defaults(self, enabled: bool, probability: float | None) -> None:
         self.allow_split = enabled
+        self.split_probability = probability
+        save_selection(self.selection_path, self.selected, allow_split=enabled, split_probability=probability)
+        self.changed()
+
+    def set_pet_split(self, pet, enabled: bool, probability: float | None) -> None:
+        pet.runtime.allow_split = enabled
+        pet.runtime.split_probability = probability
+        self.changed()
+
+    def apply_split_to_all(self, enabled: bool, probability: float | None) -> None:
         for pet in self.pets:
             pet.runtime.allow_split = enabled
-        save_selection(self.selection_path, self.selected, allow_split=enabled)
+            pet.runtime.split_probability = probability
         self.changed()
 
     def remove_all(self) -> None:

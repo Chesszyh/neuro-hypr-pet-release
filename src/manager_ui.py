@@ -6,6 +6,57 @@ from gi.repository import Gdk, Gtk, Gtk4LayerShell, Pango
 from src.hyprland import cursor_pos, load_monitors, monitor_for_point
 
 
+class SplitControls(Gtk.Box):
+    def __init__(self, manager, read, write) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self.manager, self.read, self.write = manager, read, write
+        self.syncing = False
+        row = Gtk.Box(spacing=8)
+        self.enabled = Gtk.CheckButton(label="允许分裂")
+        self.original = Gtk.CheckButton(label="使用素材概率")
+        row.append(self.enabled)
+        row.append(self.original)
+        self.append(row)
+        chance = Gtk.Box(spacing=8)
+        chance.append(Gtk.Label(label="自动分裂概率", xalign=0))
+        self.probability = Gtk.SpinButton.new_with_range(0, 100, 1)
+        self.probability.set_digits(0)
+        self.probability.set_tooltip_text("每次自主选择动作时的分裂概率；仍遵守素材条件。手动分裂不受概率限制。")
+        chance.append(self.probability)
+        chance.append(Gtk.Label(label="%"))
+        self.append(chance)
+        self.sync()
+        self.enabled.connect("toggled", self._changed)
+        self.original.connect("toggled", self._changed)
+        self.probability.connect("value-changed", self._changed)
+        self.connect("map", self._subscribe)
+        self.connect("unmap", self._unsubscribe)
+
+    def _subscribe(self, _widget):
+        if self.sync not in self.manager.listeners:
+            self.manager.listeners.append(self.sync)
+        self.sync()
+
+    def _unsubscribe(self, _widget):
+        if self.sync in self.manager.listeners:
+            self.manager.listeners.remove(self.sync)
+
+    def sync(self):
+        enabled, probability = self.read()
+        self.syncing = True
+        self.enabled.set_active(enabled)
+        self.original.set_active(probability is None)
+        self.probability.set_value(0 if probability is None else probability)
+        self.original.set_sensitive(enabled)
+        self.probability.set_sensitive(enabled and probability is not None)
+        self.syncing = False
+
+    def _changed(self, _widget):
+        if not self.syncing:
+            self.write(self.enabled.get_active(), None if self.original.get_active() else self.probability.get_value())
+            self.sync()
+
+
 class ManagerPopup(Gtk.ApplicationWindow):
     def __init__(self, manager) -> None:
         super().__init__(application=manager.application)
@@ -50,9 +101,6 @@ class ManagerPopup(Gtk.ApplicationWindow):
         controls.append(self.follow)
         controls.append(self._button("只留一只", manager.keep_one))
         controls.append(self._button("移除全部", manager.remove_all))
-        self.split = Gtk.CheckButton(label="允许分裂成两只")
-        self.split.connect("toggled", self._split_changed)
-        root.append(self.split)
         tabs = Gtk.Stack()
         tabs.set_vexpand(True)
         switcher = Gtk.StackSwitcher(stack=tabs, halign=Gtk.Align.FILL)
@@ -61,7 +109,8 @@ class ManagerPopup(Gtk.ApplicationWindow):
         root.append(tabs)
         tabs.add_titled(self._materials(), "materials", "素材")
         self.pet_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        tabs.add_titled(self._scroll(self.pet_list), "pets", "桌宠")
+        self.listed_pets = None
+        tabs.add_titled(self._pets(), "pets", "桌宠")
         tabs.add_titled(self._window_actions(), "windows", "窗口互动")
         self.message = Gtk.Label(xalign=0, wrap=True)
         root.append(self.message)
@@ -126,9 +175,24 @@ class ManagerPopup(Gtk.ApplicationWindow):
         if not self._refreshing_selection:
             self._run(lambda: self.manager.set_selection(name for name, check in self.material_checks.items() if check.get_active()))
 
-    def _split_changed(self, button) -> None:
-        if button.get_active() != self.manager.allow_split:
-            self._run(lambda: self.manager.set_allow_split(button.get_active()))
+    def _pets(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        panel.append(self._scroll(self.pet_list))
+        batch = Gtk.Expander(label="批量设置当前桌宠")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.batch_split = (self.manager.allow_split, self.manager.split_probability)
+        box.append(SplitControls(self.manager, lambda: self.batch_split, self._set_batch_split))
+        box.append(self._button("应用到当前全部", lambda: self.manager.apply_split_to_all(*self.batch_split)))
+        batch.set_child(box)
+        panel.append(batch)
+        defaults = Gtk.Expander(label="新召唤默认值")
+        defaults.set_child(SplitControls(self.manager,
+            lambda: (self.manager.allow_split, self.manager.split_probability), self.manager.set_split_defaults))
+        panel.append(defaults)
+        return panel
+
+    def _set_batch_split(self, enabled, probability):
+        self.batch_split = (enabled, probability)
 
     def _follow(self, button) -> None:
         if button.get_active() != self.manager.following:
@@ -217,7 +281,6 @@ class ManagerPopup(Gtk.ApplicationWindow):
         self.summary.set_label(f"{len(manager.pets)} 只桌宠 · {'已暂停' if manager.paused else '运行中'}")
         self.pause.set_label("继续" if manager.paused else "暂停")
         self.follow.set_active(manager.following)
-        self.split.set_active(manager.allow_split)
         self.speed.set_value(manager.window_speed)
         self._refreshing_selection = True
         for name, check in self.material_checks.items():
@@ -231,17 +294,26 @@ class ManagerPopup(Gtk.ApplicationWindow):
         self.actor.set_model(Gtk.StringList.new(["自动选择"] + [f"{pet.catalog.image_set_dir.name} · {pet.monitor.name}" for pet in self.actor_pets]))
         if old in self.actor_pets:
             self.actor.set_selected(self.actor_pets.index(old) + 1)
+        pet_keys = [(pet, pet.catalog.image_set_dir.name, pet.monitor.name) for pet in manager.pets]
+        if self.listed_pets == pet_keys:
+            return
+        self.listed_pets = pet_keys
         while (child := self.pet_list.get_first_child()) is not None:
             self.pet_list.remove(child)
         if not manager.pets:
             self.pet_list.append(Gtk.Label(label="暂无桌宠"))
-        for pet in manager.pets:
+        for number, pet in enumerate(manager.pets, 1):
+            item = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             row = Gtk.Box(spacing=8)
-            name = f"{pet.catalog.image_set_dir.name} · {pet.monitor.name}"
+            name = f"{number}. {pet.catalog.image_set_dir.name} · {pet.monitor.name}"
             row.append(Gtk.Label(label=name, xalign=0, hexpand=True))
             row.append(self._button("再召唤", lambda pet=pet: manager.resummon(pet)))
             row.append(self._button("移除", pet.close))
-            self.pet_list.append(row)
+            item.append(row)
+            item.append(SplitControls(manager,
+                lambda pet=pet: (pet.runtime.allow_split, pet.runtime.split_probability),
+                lambda enabled, probability, pet=pet: manager.set_pet_split(pet, enabled, probability)))
+            self.pet_list.append(item)
 
     def show_manager(self) -> None:
         self._run(self.refresh_windows)
