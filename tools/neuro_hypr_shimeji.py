@@ -929,10 +929,6 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
             resummon = Gtk.Button(label="再召唤同款")
             resummon.connect("clicked", lambda _button: manager.resummon(self))
             card.append(resummon)
-            card.append(Gtk.Label(label="这只桌宠 · 分裂", xalign=0))
-            card.append(SplitControls(manager,
-                lambda: (self.runtime.allow_split, self.runtime.split_probability),
-                lambda enabled, probability: manager.set_pet_split(self, enabled, probability)))
         section = Gtk.Label(label="动作", xalign=0)
         section.add_css_class("neuro-menu-section")
         card.append(section)
@@ -956,12 +952,16 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_min_content_width(208)
-        scroll.set_max_content_height(304)
+        scroll.set_max_content_height(244)
         scroll.set_propagate_natural_height(True)
         scroll.set_child(action_list)
         card.append(scroll)
 
         card.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        if manager is not None:
+            card.append(SplitControls(manager,
+                lambda: (self.runtime.allow_split, self.runtime.split_probability),
+                lambda enabled, probability: manager.set_pet_split(self, enabled, probability)))
         movement = Gtk.CheckButton(label="允许搬运和抛出悬浮窗口")
         movement.set_active(self.move_active_window)
         movement.connect("toggled", self._on_window_movement_toggled)
@@ -1204,37 +1204,50 @@ def install_css() -> None:
         popover.neuro-pet-menu contents {
           background: rgba(24, 27, 41, 0.92);
           color: #f7f7fb;
+          font-size: 80%;
           border: 1px solid rgba(255, 255, 255, 0.18);
           border-radius: 16px;
           box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
-        .neuro-menu-card { padding: 12px; }
+        .neuro-menu-card { padding: 10px; }
         .neuro-menu-title {
           color: #f6b8dc;
-          font-size: 12px;
+          font-size: 9.6px;
           font-weight: 800;
           letter-spacing: 2px;
         }
         .neuro-menu-section {
           color: rgba(255, 255, 255, 0.62);
-          font-size: 11px;
+          font-size: 8.8px;
         }
-        .neuro-menu-action,
-        .neuro-menu-remove {
-          min-height: 30px;
-          padding: 5px 10px;
+        .neuro-menu-card button {
+          min-height: 24px;
+          padding: 4px 8px;
           border: 0;
           border-radius: 9px;
           background: transparent;
           color: #f7f7fb;
           box-shadow: none;
         }
-        .neuro-menu-action:hover {
-          background: rgba(248, 187, 220, 0.17);
+        .neuro-menu-card button:hover { color: #f6b8dc; }
+        .neuro-menu-card spinbutton,
+        .neuro-menu-card spinbutton text,
+        .neuro-menu-card checkbutton check {
+          background: transparent;
+          box-shadow: none;
+        }
+        .neuro-menu-card spinbutton text {
+          min-height: 24px;
+          padding: 2px 4px;
+        }
+        .neuro-menu-card spinbutton button {
+          min-height: 20px;
+          min-width: 20px;
+          padding: 2px;
         }
         .neuro-menu-remove { color: #ffb6c8; }
         .neuro-menu-remove:hover {
-          background: rgba(255, 125, 157, 0.18);
+          color: #ff8ba5;
         }
         .neuro-menu-empty {
           padding: 9px;
