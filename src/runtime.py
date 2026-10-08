@@ -6,8 +6,8 @@ import re
 from dataclasses import dataclass, replace
 from typing import Any
 
-from neuro_hypr_pet.shimeji_model import ActionCatalog, ActionDef, ActionReference, ActionStep, AnimationDef, BehaviorCatalog, PoseFrame
-from neuro_hypr_pet.sound import SoundEvent
+from src.shimeji_model import ActionCatalog, ActionDef, ActionReference, ActionStep, AnimationDef, BehaviorCatalog, PoseFrame
+from src.sound import SoundEvent
 
 
 FLOOR_IDLE_ACTIONS = (

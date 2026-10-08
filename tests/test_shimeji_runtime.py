@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from neuro_hypr_pet.shimeji_model import load_action_catalog, load_behavior_catalog
-from neuro_hypr_pet.sound import SoundEvent
-from neuro_hypr_pet.runtime import (
+from src.shimeji_model import load_action_catalog, load_behavior_catalog
+from src.sound import SoundEvent
+from src.runtime import (
     BreedEvent,
     InteractionEvent,
     PetRuntime,
@@ -887,7 +887,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
 
         runtime.update_cursor_pos(960, 1000)
         self.assertTrue(runtime.pointer_down(960, 1000, image_width=128, image_height=128))
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.0):
+        with patch("src.runtime.random.random", return_value=0.0):
             for _ in range(250):
                 runtime.tick()
 
@@ -901,7 +901,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
 
         runtime.update_cursor_pos(960, 1000)
         self.assertTrue(runtime.pointer_down(960, 1000, image_width=128, image_height=128))
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.9):
+        with patch("src.runtime.random.random", return_value=0.9):
             for _ in range(250):
                 runtime.tick()
 
@@ -915,7 +915,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
 
         runtime.update_cursor_pos(960, 1000)
         self.assertTrue(runtime.pointer_down(960, 1000, image_width=128, image_height=128))
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.0):
+        with patch("src.runtime.random.random", return_value=0.0):
             for _ in range(250):
                 runtime.tick()
         self.assertEqual(runtime.action_name, "Resisting")
@@ -932,7 +932,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
 
         runtime.update_cursor_pos(960, 1000)
         self.assertTrue(runtime.pointer_down(960, 1000, image_width=128, image_height=128))
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.0):
+        with patch("src.runtime.random.random", return_value=0.0):
             for _ in range(250):
                 runtime.tick()
         self.assertEqual(runtime.action_name, "Resisting")
@@ -1601,7 +1601,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
             catalog = load_action_catalog(xml_path)
             runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(0, 0, 320, 260), start_x=64, start_y=260))
 
-            with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+            with patch("src.runtime.random.random", return_value=0.5):
                 runtime.start_action("RunAlongWorkAreaFloor")
             runtime.tick()
 
@@ -1870,7 +1870,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
             behavior_catalog=behaviors,
         )
 
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+        with patch("src.runtime.random.random", return_value=0.5):
             runtime.start_action("HoldOntoCeiling")
             for _ in range(300):
                 runtime.tick()
@@ -1883,7 +1883,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
         catalog = load_action_catalog(actions_xml)
         runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(0, 0, 1400, 900), start_x=700, start_y=900))
 
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+        with patch("src.runtime.random.random", return_value=0.5):
             runtime.start_action("SitDown")
             for _ in range(151):
                 runtime.tick()
@@ -1912,7 +1912,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
             behavior_catalog=load_behavior_catalog(conf / "behaviors.xml"),
         )
 
-        with patch("neuro_hypr_pet.runtime.random.choices", side_effect=lambda items, **_kwargs: [items[0]]):
+        with patch("src.runtime.random.choices", side_effect=lambda items, **_kwargs: [items[0]]):
             next_behavior = runtime._choose_next_behavior("SitAndFaceMouse")
 
         self.assertEqual(next_behavior[0], "SitWhileDanglingLegs")
@@ -1991,7 +1991,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
         catalog = load_action_catalog(Path("refs/The-Neuroling-Collection/img/Neuron/conf/actions.xml"))
         runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(0, 0, 1920, 1080), start_x=960, start_y=1080))
 
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+        with patch("src.runtime.random.random", return_value=0.5):
             runtime.start_action("RunAlongWorkAreaFloor")
         runtime.tick()
 
@@ -2006,7 +2006,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
         runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(0, 0, 1920, 1080), start_x=1000, start_y=1080))
 
         runtime.update_cursor_pos(1200, 1080)
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+        with patch("src.runtime.random.random", return_value=0.5):
             runtime.start_action("ChaseMouse")
 
         self.assertEqual(runtime.action_name, "Dash")
@@ -2019,7 +2019,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
         runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(3200, 35, 2560, 1565), start_x=3600, start_y=1600))
         runtime.update_cursor_pos(4500, 700)
         positions = []
-        with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+        with patch("src.runtime.random.random", return_value=0.5):
             for _ in range(1000):
                 if runtime.ready_for_idle:
                     runtime.start_action("ChaseMouse")
@@ -2037,7 +2037,7 @@ class ShimejiRuntimeTest(unittest.TestCase):
                 catalog = load_action_catalog(image_sets / name / "conf/actions.xml")
                 runtime = PetRuntime(catalog, RuntimeConfig(work_area=Rect(3200, 35, 2560, 1565), start_x=4000, start_y=1600))
                 runtime.update_cursor_pos(4400, 700)
-                with patch("neuro_hypr_pet.runtime.random.random", return_value=0.5):
+                with patch("src.runtime.random.random", return_value=0.5):
                     for _ in range(350):
                         runtime.follow_cursor()
                         runtime.tick()

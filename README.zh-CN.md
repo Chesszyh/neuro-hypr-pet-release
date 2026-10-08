@@ -153,7 +153,7 @@ python3 tools/neuro_hypr_shimeji.py \
 安装时传入 `--image-set` 会更新该选择。召唤成功后选择清空，因此后续服务启动通常
 只显示托盘，需要再次召唤。重新运行安装器可更新显示器、帧率等启动参数。
 服务生成规则由
-[service.py](neuro_hypr_pet/service.py) 的 `render_shimeji_user_service()` 定义。
+[service.py](src/service.py) 的 `render_shimeji_user_service()` 定义。
 
 ```bash
 systemctl --user status neuro-hypr-pet-shimeji.service

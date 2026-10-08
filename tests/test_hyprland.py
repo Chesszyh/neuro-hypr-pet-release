@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from neuro_hypr_pet.hyprland import (
+from src.hyprland import (
     ActiveWindowMoveGuard,
     WindowMotion,
     WindowPlacement,
@@ -18,13 +18,13 @@ from neuro_hypr_pet.hyprland import (
     window_from_hyprctl,
     minimize_window,
 )
-from neuro_hypr_pet.runtime import Rect
+from src.runtime import Rect
 
 
 class HyprlandTest(unittest.TestCase):
     def setUp(self):
-        query = patch("neuro_hypr_pet.hyprland.window_animation_disabled", return_value="false")
-        setting = patch("neuro_hypr_pet.hyprland.set_window_animation_disabled")
+        query = patch("src.hyprland.window_animation_disabled", return_value="false")
+        setting = patch("src.hyprland.set_window_animation_disabled")
         self.animation_query = query.start()
         self.animation_set = setting.start()
         self.addCleanup(query.stop)
@@ -37,8 +37,8 @@ class HyprlandTest(unittest.TestCase):
             self.animation_query.return_value = value
             self.animation_set.reset_mock()
             motion = WindowMotion()
-            with (patch("neuro_hypr_pet.hyprland.move_window_to_rect"),
-                  patch("neuro_hypr_pet.hyprland.load_windows", return_value=[window])):
+            with (patch("src.hyprland.move_window_to_rect"),
+                  patch("src.hyprland.load_windows", return_value=[window])):
                 motion.move(window, Rect(200, 100, 600, 400), [monitor])
                 motion.move(window, Rect(203, 100, 600, 400), [monitor])
                 motion.release()
@@ -52,9 +52,9 @@ class HyprlandTest(unittest.TestCase):
         monitor = monitor_from_hyprctl({"name": "test", "width": 1600, "height": 900})
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "0xabc.json"
-            with (patch("neuro_hypr_pet.hyprland.minimized_cache_path", return_value=path),
-                  patch("neuro_hypr_pet.hyprland.set_window_floating"),
-                  patch("neuro_hypr_pet.hyprland._window_dispatch") as dispatch):
+            with (patch("src.hyprland.minimized_cache_path", return_value=path),
+                  patch("src.hyprland.set_window_floating"),
+                  patch("src.hyprland._window_dispatch") as dispatch):
                 minimize_window(window, placement)
                 saved = json.loads(path.read_text())
                 self.assertEqual(saved["at"], [100, 200])
@@ -70,8 +70,8 @@ class HyprlandTest(unittest.TestCase):
 
     def test_cursor_pos_uses_hyprland_socket_before_hyprctl_subprocess(self) -> None:
         with (
-            patch("neuro_hypr_pet.hyprland._hyprctl_socket_json", return_value={"x": 3441, "y": 1280}) as socket_json,
-            patch("neuro_hypr_pet.hyprland.subprocess.check_output") as check_output,
+            patch("src.hyprland._hyprctl_socket_json", return_value={"x": 3441, "y": 1280}) as socket_json,
+            patch("src.hyprland.subprocess.check_output") as check_output,
         ):
             self.assertEqual(cursor_pos(), CursorPos(3441, 1280))
 
@@ -252,7 +252,7 @@ class HyprlandTest(unittest.TestCase):
             }
         )
 
-        with patch("neuro_hypr_pet.hyprland.subprocess.run") as run:
+        with patch("src.hyprland.subprocess.run") as run:
             run.return_value.stdout = "ok\n"
             move_window_to_monitor_rect(monitor, window, Rect(16, 51, 1203, 800))
 
@@ -288,7 +288,7 @@ class HyprlandTest(unittest.TestCase):
         )
         guard = ActiveWindowMoveGuard()
 
-        with patch("neuro_hypr_pet.hyprland.move_window_to_monitor_rect") as move:
+        with patch("src.hyprland.move_window_to_monitor_rect") as move:
             self.assertTrue(guard.move_if_changed(monitor, window, Rect(16, 51, 1203, 800)))
             self.assertFalse(guard.move_if_changed(monitor, window, Rect(16, 51, 1203, 800)))
             self.assertTrue(guard.move_if_changed(monitor, window, Rect(17, 51, 1203, 800)))
@@ -300,7 +300,7 @@ class HyprlandTest(unittest.TestCase):
         window = window_from_hyprctl({"address": "0xabc", "at": [100, 200], "size": [300, 200], "floating": True})
         originals = {}
         motion = WindowMotion(originals)
-        with patch("neuro_hypr_pet.hyprland.move_window_to_rect") as move:
+        with patch("src.hyprland.move_window_to_rect") as move:
             self.assertEqual(motion.move(window, Rect(950, -20, 300, 200), [monitor]), Rect(700, 35, 300, 200))
             motion.move(window, Rect(950, -20, 300, 200), [monitor])
             move.assert_called_once_with(window, Rect(700, 35, 300, 200))
@@ -312,7 +312,7 @@ class HyprlandTest(unittest.TestCase):
     def test_window_motion_does_not_dispatch_to_tiled_or_fullscreen_clients(self) -> None:
         monitor = monitor_from_hyprctl({"name": "test", "width": 1000, "height": 800})
         motion = WindowMotion()
-        with patch("neuro_hypr_pet.hyprland.move_window_to_rect") as move:
+        with patch("src.hyprland.move_window_to_rect") as move:
             for extra in ({"floating": False}, {"floating": True, "fullscreen": 1}, {"floating": True, "hidden": True}):
                 window = window_from_hyprctl({"address": "0xabc", "at": [100, 200], "size": [300, 200], **extra})
                 self.assertIsNone(motion.move(window, Rect(200, 300, 300, 200), [monitor]))
@@ -322,7 +322,7 @@ class HyprlandTest(unittest.TestCase):
         monitor = monitor_from_hyprctl({"name": "test", "width": 1000, "height": 800})
         window = window_from_hyprctl({"address": "0xabc", "at": [100, 200], "size": [300, 200], "floating": True})
         motion = WindowMotion()
-        with patch("neuro_hypr_pet.hyprland.subprocess.run") as run:
+        with patch("src.hyprland.subprocess.run") as run:
             run.return_value.stdout = "Invalid dispatcher"
             with self.assertRaises(RuntimeError):
                 motion.move(window, Rect(200, 300, 300, 200), [monitor])
@@ -335,9 +335,9 @@ class HyprlandTest(unittest.TestCase):
         for was_floating, now_floating in ((True, True), (False, True), (True, False)):
             window = window_from_hyprctl({"address": "0xabc", "at": [200, 200], "size": [600, 400], "floating": now_floating})
             motion = WindowMotion({window.address: WindowPlacement(original, was_floating)})
-            with (patch("neuro_hypr_pet.hyprland.resize_window") as resize,
-                  patch("neuro_hypr_pet.hyprland.move_window_to_rect") as move,
-                  patch("neuro_hypr_pet.hyprland.set_window_floating") as floating):
+            with (patch("src.hyprland.resize_window") as resize,
+                  patch("src.hyprland.move_window_to_rect") as move,
+                  patch("src.hyprland.set_window_floating") as floating):
                 motion.restore([window], [monitor])
                 move.assert_called_once_with(window, original)
                 if was_floating:

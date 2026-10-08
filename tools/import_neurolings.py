@@ -7,7 +7,7 @@ from pathlib import Path
 from zipfile import BadZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from neuro_hypr_pet.assets import DOWNLOAD_PAGE, default_collection, import_collection
+from src.assets import DOWNLOAD_PAGE, default_collection, import_collection
 
 
 def main(argv=None) -> int:

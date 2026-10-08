@@ -6,7 +6,7 @@ import random
 from pathlib import Path
 from typing import Callable
 
-from neuro_hypr_pet.hyprland import load_monitors, load_windows, select_monitor, visible_windows
+from src.hyprland import load_monitors, load_windows, select_monitor, visible_windows
 
 
 def preferences_path() -> Path:
@@ -187,7 +187,7 @@ class PetManager:
                 pet.runtime.start_action("Stand")
                 pet.runtime.desired_active_window_rect = None
                 pet.window_motion.release()
-        from neuro_hypr_pet.hyprland import WindowMotion
+        from src.hyprland import WindowMotion
         WindowMotion(self.application._neuro_hypr_window_originals).restore(load_windows(), load_monitors())
         self.message = "已还原窗口"
         self.changed()
@@ -198,7 +198,7 @@ class PetManager:
         self.minimizations.clear()
 
     def shutdown(self) -> None:
-        from neuro_hypr_pet.hyprland import WindowMotion
+        from src.hyprland import WindowMotion
         placements = {address: self.application._neuro_hypr_window_originals[address] for address in self.minimizations}
         self.cancel_minimizations()
         if placements:

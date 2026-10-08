@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from neuro_hypr_pet.sound import SoundEvent, SoundPlayer, resolve_sound_path
+from src.sound import SoundEvent, SoundPlayer, resolve_sound_path
 
 
 class SoundTest(unittest.TestCase):

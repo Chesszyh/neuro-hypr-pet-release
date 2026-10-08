@@ -1,8 +1,8 @@
 from pathlib import Path
 import unittest
 
-from neuro_hypr_pet.runtime import PetRuntime, Rect, RuntimeConfig
-from neuro_hypr_pet.shimeji_model import load_action_catalog, load_behavior_catalog
+from src.runtime import PetRuntime, Rect, RuntimeConfig
+from src.shimeji_model import load_action_catalog, load_behavior_catalog
 
 
 def real_runtime(image_set: str) -> PetRuntime:

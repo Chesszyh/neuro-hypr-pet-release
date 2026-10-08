@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
-from neuro_hypr_pet.assets import default_collection, import_collection
+from src.assets import default_collection, import_collection
 
 
 ACTIONS = '''<Mascot xmlns="http://www.group-finity.com/Mascot"><ActionList>

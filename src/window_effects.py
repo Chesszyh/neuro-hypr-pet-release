@@ -1,6 +1,6 @@
 from gi.repository import GLib
 
-from neuro_hypr_pet.hyprland import (Rect, load_monitors, load_windows, minimize_window, monitor_for_point,
+from src.hyprland import (Rect, load_monitors, load_windows, minimize_window, monitor_for_point,
                                      move_window_to_rect, resize_window, set_window_animation_disabled,
                                      window_move_animation_ms)
 

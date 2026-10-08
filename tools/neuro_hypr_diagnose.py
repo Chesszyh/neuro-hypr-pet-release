@@ -9,11 +9,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from neuro_hypr_pet.assets import default_collection
+from src.assets import default_collection
 
-from neuro_hypr_pet.hyprland import active_window, active_window_rect_for_monitor, cursor_pos, select_monitor  # noqa: E402
-from neuro_hypr_pet.runtime import PetRuntime, RuntimeConfig  # noqa: E402
-from neuro_hypr_pet.shimeji_model import ActionCatalog, ActionDef, PoseFrame, load_action_catalog, load_behavior_catalog  # noqa: E402
+from src.hyprland import active_window, active_window_rect_for_monitor, cursor_pos, select_monitor  # noqa: E402
+from src.runtime import PetRuntime, RuntimeConfig  # noqa: E402
+from src.shimeji_model import ActionCatalog, ActionDef, PoseFrame, load_action_catalog, load_behavior_catalog  # noqa: E402
 
 
 def parse_anchor(value: str) -> tuple[int, int]:

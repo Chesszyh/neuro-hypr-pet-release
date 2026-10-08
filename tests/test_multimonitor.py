@@ -4,9 +4,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from neuro_hypr_pet.hyprland import WindowMotion, desktop_rect, monitor_for_point, monitor_from_hyprctl, window_from_hyprctl
-from neuro_hypr_pet.runtime import PetRuntime, Rect, RuntimeConfig
-from neuro_hypr_pet.shimeji_model import load_action_catalog
+from src.hyprland import WindowMotion, desktop_rect, monitor_for_point, monitor_from_hyprctl, window_from_hyprctl
+from src.runtime import PetRuntime, Rect, RuntimeConfig
+from src.shimeji_model import load_action_catalog
 
 
 def displays():

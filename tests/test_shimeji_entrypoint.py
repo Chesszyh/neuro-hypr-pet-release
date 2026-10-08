@@ -7,9 +7,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from neuro_hypr_pet.hyprland import monitor_from_hyprctl, window_from_hyprctl
-from neuro_hypr_pet.runtime import PetRuntime, Rect, RuntimeConfig
-from neuro_hypr_pet.shimeji_model import load_action_catalog
+from src.hyprland import monitor_from_hyprctl, window_from_hyprctl
+from src.runtime import PetRuntime, Rect, RuntimeConfig
+from src.shimeji_model import load_action_catalog
 
 
 class ShimejiEntrypointTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class ShimejiEntrypointTest(unittest.TestCase):
         path = Path(self.preferences.name) / "preferences.json"
         with patch.dict(os.environ, {"NEURO_HYPR_SHIMEJI_PRELOADED": "1"}):
             import tools.neuro_hypr_shimeji as entrypoint
-        for target in ("neuro_hypr_pet.manager.preferences_path", "tools.neuro_hypr_shimeji.preferences_path"):
+        for target in ("src.manager.preferences_path", "tools.neuro_hypr_shimeji.preferences_path"):
             patched = patch(target, return_value=path)
             patched.start()
             self.addCleanup(patched.stop)
@@ -193,10 +193,10 @@ class ShimejiEntrypointTest(unittest.TestCase):
             patch.object(entrypoint, "load_monitors", return_value=[monitor, object()]),
             patch.object(entrypoint, "SpriteLayerWindow", FakeWindow),
             patch.object(entrypoint, "PetTray"),
-            patch("neuro_hypr_pet.manager.available_image_sets", return_value=("Neuron",)),
-            patch("neuro_hypr_pet.manager.load_selection", return_value=("Neuron",)),
-            patch("neuro_hypr_pet.manager.select_monitor", return_value=monitor),
-            patch("neuro_hypr_pet.manager.load_monitors", return_value=[monitor, object()]),
+            patch("src.manager.available_image_sets", return_value=("Neuron",)),
+            patch("src.manager.load_selection", return_value=("Neuron",)),
+            patch("src.manager.select_monitor", return_value=monitor),
+            patch("src.manager.load_monitors", return_value=[monitor, object()]),
         ):
             result = entrypoint.main(["--collection", str(collection), "--duration", "0"])
             self.assertEqual(len(created["windows"]), 1)
@@ -304,7 +304,7 @@ class ShimejiEntrypointTest(unittest.TestCase):
     def test_surface_cache_uses_transparent_surface_for_pose_without_image(self) -> None:
         with patch.dict(os.environ, {"NEURO_HYPR_SHIMEJI_PRELOADED": "1"}):
             import tools.neuro_hypr_shimeji as entrypoint
-            from neuro_hypr_pet.shimeji_model import PoseFrame
+            from src.shimeji_model import PoseFrame
 
         with tempfile.TemporaryDirectory() as tmp:
             cache = entrypoint.SurfaceCache(Path(tmp))

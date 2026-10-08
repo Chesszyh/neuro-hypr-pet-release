@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
-from neuro_hypr_pet.shimeji_model import load_action_catalog, load_behavior_catalog
+from src.shimeji_model import load_action_catalog, load_behavior_catalog
 
 
 DOWNLOAD_PAGE = "https://neurofumo.itch.io/neurolings"

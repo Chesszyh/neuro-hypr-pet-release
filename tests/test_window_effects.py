@@ -2,8 +2,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from neuro_hypr_pet.hyprland import Rect, WindowPlacement, monitor_from_hyprctl, window_from_hyprctl
-from neuro_hypr_pet.window_effects import animate_minimize
+from src.hyprland import Rect, WindowPlacement, monitor_from_hyprctl, window_from_hyprctl
+from src.window_effects import animate_minimize
 
 
 class MinimizeEffectTest(unittest.TestCase):
@@ -14,15 +14,15 @@ class MinimizeEffectTest(unittest.TestCase):
         monitor = monitor_from_hyprctl({"name": "test", "width": 1600, "height": 900})
         manager = SimpleNamespace(application=SimpleNamespace(_neuro_hypr_window_originals={window.address: placement}),
                                   minimizations={}, changed=Mock(), message="")
-        with (patch("neuro_hypr_pet.window_effects.load_monitors", return_value=[monitor]),
-              patch("neuro_hypr_pet.window_effects.load_windows", return_value=[window]),
-              patch("neuro_hypr_pet.window_effects.window_move_animation_ms", return_value=700),
-              patch("neuro_hypr_pet.window_effects.resize_window") as resize,
-              patch("neuro_hypr_pet.window_effects.move_window_to_rect") as move,
-              patch("neuro_hypr_pet.window_effects.minimize_window") as hide,
-              patch("neuro_hypr_pet.window_effects.set_window_animation_disabled") as animation,
-              patch("neuro_hypr_pet.window_effects.GLib.timeout_add", return_value=42) as timer,
-              patch("neuro_hypr_pet.window_effects.GLib.source_remove") as remove):
+        with (patch("src.window_effects.load_monitors", return_value=[monitor]),
+              patch("src.window_effects.load_windows", return_value=[window]),
+              patch("src.window_effects.window_move_animation_ms", return_value=700),
+              patch("src.window_effects.resize_window") as resize,
+              patch("src.window_effects.move_window_to_rect") as move,
+              patch("src.window_effects.minimize_window") as hide,
+              patch("src.window_effects.set_window_animation_disabled") as animation,
+              patch("src.window_effects.GLib.timeout_add", return_value=42) as timer,
+              patch("src.window_effects.GLib.source_remove") as remove):
             animate_minimize(window, manager, "true")
             resize.assert_called_once_with(window, 100, 80)
             move.assert_called_once_with(window, Rect(750, 820, 100, 80))

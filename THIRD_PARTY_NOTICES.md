@@ -1,6 +1,6 @@
 # Third-party notices
 
-The Wayland/Hyprland adaptation in `neuro_hypr_pet/` and `tools/`, tests,
+The Wayland/Hyprland adaptation in `src/` and `tools/`, tests,
 and project documentation are provided under the [MIT License](LICENSE).
 
 ## Shimeji and Shimeji-ee

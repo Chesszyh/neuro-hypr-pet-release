@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from neuro_hypr_pet.manager import PetManager
-from neuro_hypr_pet.runtime import PetRuntime, Rect, RuntimeConfig
-from neuro_hypr_pet.shimeji_model import load_action_catalog, load_behavior_catalog
+from src.manager import PetManager
+from src.runtime import PetRuntime, Rect, RuntimeConfig
+from src.shimeji_model import load_action_catalog, load_behavior_catalog
 
 
 ACTIONS = '''<Mascot xmlns="http://www.group-finity.com/Mascot"><ActionList>

@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from gi.repository import Gdk, Gtk, Gtk4LayerShell, Pango
 
-from neuro_hypr_pet.hyprland import cursor_pos, load_monitors, monitor_for_point
+from src.hyprland import cursor_pos, load_monitors, monitor_for_point
 
 
 class ManagerPopup(Gtk.ApplicationWindow):

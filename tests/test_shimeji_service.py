@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from neuro_hypr_pet.service import render_shimeji_user_service, write_shimeji_user_service, write_manager_desktop_entry
+from src.service import render_shimeji_user_service, write_shimeji_user_service, write_manager_desktop_entry
 
 
 class ShimejiServiceTest(unittest.TestCase):

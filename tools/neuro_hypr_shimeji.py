@@ -52,9 +52,9 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell  # noqa: E402
 
-from neuro_hypr_pet.assets import default_collection
+from src.assets import default_collection
 
-from neuro_hypr_pet.hyprland import (
+from src.hyprland import (
     WindowMotion,
     WindowPlacement,
     MonitorInfo,
@@ -72,14 +72,14 @@ from neuro_hypr_pet.hyprland import (
     resize_window,
     clamp_window_rect,
 )
-from neuro_hypr_pet.manager import PetManager, preferences_path, save_selection
-from neuro_hypr_pet.manager_ui import ManagerPopup
-from neuro_hypr_pet.window_effects import animate_minimize
-from neuro_hypr_pet.tray import PetTray
-from neuro_hypr_pet.runtime import PetRuntime, PetWorld, Rect, RuntimeConfig
-from neuro_hypr_pet.service import write_manager_desktop_entry, write_shimeji_user_service
-from neuro_hypr_pet.shimeji_model import ActionCatalog, BehaviorCatalog, PoseFrame, load_action_catalog, load_behavior_catalog
-from neuro_hypr_pet.sound import SoundPlayer
+from src.manager import PetManager, preferences_path, save_selection
+from src.manager_ui import ManagerPopup
+from src.window_effects import animate_minimize
+from src.tray import PetTray
+from src.runtime import PetRuntime, PetWorld, Rect, RuntimeConfig
+from src.service import write_manager_desktop_entry, write_shimeji_user_service
+from src.shimeji_model import ActionCatalog, BehaviorCatalog, PoseFrame, load_action_catalog, load_behavior_catalog
+from src.sound import SoundPlayer
 
 
 DEFAULT_ENV_SYNC_HZ = 5
@@ -1353,13 +1353,6 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
-    from neuro_hypr_pet.manager import available_image_sets
-    try:
-        if not available_image_sets(collection):
-            raise ValueError(f"No usable image sets in {collection}; import Neurolings v1.zip first.")
-    except (OSError, ValueError) as error:
-        print(str(error), file=sys.stderr)
-        return 2
     app = Gtk.Application(application_id="dev.chesszyh.neuro-hypr-shimeji")
 
     def show_manager() -> None:
@@ -1368,7 +1361,10 @@ def main(argv: list[str] | None = None) -> int:
             app._neuro_hypr_manager_popup = ManagerPopup(manager)
         app._neuro_hypr_manager_popup.show_manager()
 
+    startup_error = 0
+
     def on_activate(application: Gtk.Application) -> None:
+        nonlocal startup_error
         if hasattr(application, "_neuro_hypr_manager"):
             show_manager()
             return
@@ -1376,7 +1372,15 @@ def main(argv: list[str] | None = None) -> int:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         install_css()
         world = pet_world_for_application(application)
-        manager = PetManager(application, collection, lambda name, monitor: create_window(application, name, monitor, world), monitor=args.monitor)
+        try:
+            manager = PetManager(application, collection, lambda name, monitor: create_window(application, name, monitor, world), monitor=args.monitor)
+            if not manager.available:
+                raise ValueError(f"No usable image sets in {collection}; import Neurolings v1.zip first.")
+        except (OSError, ValueError) as error:
+            print(str(error), file=sys.stderr)
+            startup_error = 2
+            application.quit()
+            return
         if args.image_set:
             manager.set_selection(args.image_set)
         actions = {
@@ -1433,7 +1437,7 @@ def main(argv: list[str] | None = None) -> int:
         if hasattr(application, "_neuro_hypr_tray"):
             application._neuro_hypr_tray.close()
     app.connect("shutdown", on_shutdown)
-    return app.run([])
+    return app.run([]) or startup_error
 
 
 if __name__ == "__main__":

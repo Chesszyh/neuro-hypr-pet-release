@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from neuro_hypr_pet.runtime import Rect
+from src.runtime import Rect
 
 
 @dataclass(frozen=True)

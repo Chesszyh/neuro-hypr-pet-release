@@ -185,7 +185,7 @@ reads the saved pending image-set selection at startup; passing `--image-set` du
 installation updates that selection. Successful summons clear it, so subsequent
 service starts show only the tray until you summon pets again. Run the installer
 again to update the monitor, frame rate, and other launch arguments. Service generation is defined by
-`render_shimeji_user_service()` in [service.py](neuro_hypr_pet/service.py).
+`render_shimeji_user_service()` in [service.py](src/service.py).
 
 ```bash
 systemctl --user status neuro-hypr-pet-shimeji.service
