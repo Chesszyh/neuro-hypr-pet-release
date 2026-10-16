@@ -195,8 +195,8 @@ class ShimejiEntrypointTest(unittest.TestCase):
             patch.object(entrypoint, "PetTray"),
             patch("src.manager.available_image_sets", return_value=("Neuron",)),
             patch("src.manager.load_selection", return_value=("Neuron",)),
-            patch("src.manager.select_monitor", return_value=monitor),
-            patch("src.manager.load_monitors", return_value=[monitor, object()]),
+            patch("src.hyprland.select_monitor", return_value=monitor),
+            patch("src.hyprland.load_monitors", return_value=[monitor, object()]),
         ):
             result = entrypoint.main(["--collection", str(collection), "--duration", "0"])
             self.assertEqual(len(created["windows"]), 1)

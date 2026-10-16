@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
@@ -8,13 +7,10 @@ from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
 from src.shimeji_model import load_action_catalog, load_behavior_catalog
+from src.paths import default_collection
 
 
 DOWNLOAD_PAGE = "https://neurofumo.itch.io/neurolings"
-
-
-def default_collection() -> Path:
-    return Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share"))) / "neuro-hypr-pet/collection"
 
 
 def import_collection(archive: Path, destination: Path | None = None) -> tuple[str, ...]:

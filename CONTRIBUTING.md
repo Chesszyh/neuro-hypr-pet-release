@@ -59,10 +59,16 @@ relevant tests.
 
 ## Continuous integration
 
-[Tests](.github/workflows/tests.yml) runs on pushes to `main`, pull requests,
+[Tests](.github/workflows/tests.yml) runs on pushes to `main` and `master`, pull requests,
 and manual dispatch. It installs the system GTK and Python dependencies in
 Fedora and runs the test suite without artwork. Optional extended-collection
 tests are skipped; desktop interaction still needs a Hyprland trial.
+
+The macOS job installs `packaging/macos/requirements.lock` and runs
+`python tools/run_core_tests.py`. This runner covers shared engine and native
+adapter boundaries without opening windows. GTK entry-point, multi-monitor UI,
+and window-effect tests remain in the Fedora job. For native prototype builds
+and interactive checks, see [macOS probe](packaging/macos/README.md).
 
 ## Licenses and third-party material
 

@@ -7,6 +7,8 @@ Shimeji `actions.xml` / `behaviors.xml`。每只桌宠使用一个与图片大�
 
 [English](README.md) · [贡献指南](CONTRIBUTING.md)
 
+macOS：[原生应用与安装指南](packaging/macos/README.md)。
+
 ## 依赖
 
 - Hyprland Wayland 会话，能够调用 `hyprctl`。

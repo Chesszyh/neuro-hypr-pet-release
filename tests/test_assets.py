@@ -73,5 +73,5 @@ class ImportTest(unittest.TestCase):
         self.assertFalse(self.destination.exists())
 
     def test_default_uses_xdg_data_home(self):
-        with patch.dict(os.environ, {"XDG_DATA_HOME": str(self.root)}):
+        with patch("src.paths.sys.platform", "linux"), patch.dict(os.environ, {"XDG_DATA_HOME": str(self.root)}):
             self.assertEqual(default_collection(), self.root / "neuro-hypr-pet/collection")

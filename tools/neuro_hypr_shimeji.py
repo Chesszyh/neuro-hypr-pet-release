@@ -53,6 +53,11 @@ gi.require_version("Gtk4LayerShell", "1.0")
 from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell  # noqa: E402
 
 from src.assets import default_collection
+from src.controller import (
+    MANUAL_BEHAVIOR_LABELS, COMPANION_CHOICES, manual_behavior_label,
+    apply_pending_transforms, apply_pending_interactions, apply_pending_breeds,
+    apply_interaction_event, close_if_self_destructed, configure_runtime_from_breed, forget_window, load_image_set, make_runtime, pet_world_for_application, play_pending_sounds, remember_window
+)
 
 from src.hyprland import (
     WindowMotion,
@@ -84,40 +89,6 @@ from src.sound import SoundPlayer
 
 DEFAULT_ENV_SYNC_HZ = 5
 
-MANUAL_BEHAVIOR_LABELS = {
-    "SitAndFaceMouse": "看向鼠标",
-    "SitDown": "坐下",
-    "SitWhileDanglingLegs": "晃晃双腿",
-    "LieDown": "躺下",
-    "HeartHeartHeart": "比心",
-    "Wink": "眨眼",
-    "SplitIntoTwo": "分裂成两只",
-    "Gymbag": "从包里叫来伙伴",
-    "CrawlAlongWorkAreaFloor": "沿地面爬行",
-    "ClimbAlongWall": "沿墙攀爬",
-    "ClimbAlongCeiling": "沿顶端攀爬",
-    "NoticeFallingTutel": "留意落下的 Tutel",
-    "HugEvil": "拥抱 Evil",
-    "HurlEvil": "抛起 Evil",
-    "AskForHugs": "讨抱抱",
-    "RunAndGrabBottomLeftWall": "跑向左侧墙角",
-    "RunAndGrabBottomRightWall": "跑向右侧墙角",
-    "JumpFromBottomOfIE": "从窗口底边跳下",
-    "ThrowIEFromLeft": "从左侧抛出窗口",
-    "ThrowIEFromRight": "从右侧抛出窗口",
-    "RunAndThrowIEFromLeft": "跑动后从左侧抛窗",
-    "RunAndThrowIEFromRight": "跑动后从右侧抛窗",
-}
-
-COMPANION_CHOICES = (
-    ("Eviling", "召唤 Evil", ("Eviling",)),
-    ("Tuteling", "召唤 Tutel", ("Tuteling", "Vedaling")),
-)
-
-
-def manual_behavior_label(name: str) -> str:
-    return MANUAL_BEHAVIOR_LABELS.get(name, re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name))
-
 
 class SurfaceCache:
     def __init__(self, image_set_dir: Path) -> None:
@@ -136,20 +107,6 @@ class SurfaceCache:
         return surface
 
 
-def make_runtime(catalog: ActionCatalog, monitor: MonitorInfo, behavior_catalog: BehaviorCatalog | None = None) -> PetRuntime:
-    initial_action = catalog.actions.get("Falling") or next(iter(catalog.actions.values()))
-    initial_frame = initial_action.frames[0]
-    return PetRuntime(
-        catalog,
-        RuntimeConfig(
-            work_area=monitor.global_work_area,
-            start_x=monitor.global_work_area.left + (monitor.work_area.width // 2),
-            start_y=monitor.global_work_area.top + initial_frame.anchor_y,
-        ),
-        behavior_catalog=behavior_catalog,
-    )
-
-
 def draw_surface(cr: cairo.Context, surface: cairo.ImageSurface, x: int, y: int, mirror: bool) -> None:
     if mirror:
         cr.save()
@@ -166,11 +123,6 @@ def draw_surface(cr: cairo.Context, surface: cairo.ImageSurface, x: int, y: int,
 def make_sound_player(catalog: ActionCatalog) -> SoundPlayer:
     collection_root = catalog.image_set_dir.parent.parent
     return SoundPlayer(collection_root, catalog.image_set_dir)
-
-
-def play_pending_sounds(runtime: PetRuntime, player: SoundPlayer) -> None:
-    for event in runtime.pop_sound_events():
-        player.play(event)
 
 
 def format_runtime_state(runtime: PetRuntime, rect: Rect, *, ticks: int) -> str:
@@ -300,72 +252,6 @@ def layer_output_rect(window: object) -> Rect:
     if isinstance(width, int) and isinstance(height, int) and width > 0 and height > 0:
         return Rect(0, 0, width, height)
     return Rect(-100000, -100000, 200000, 200000)
-
-
-def close_if_self_destructed(runtime: PetRuntime, window: Gtk.Window) -> bool:
-    events = runtime.pop_self_destruct_events()
-    if not events:
-        return False
-    window.close()
-    return True
-
-
-def configure_runtime_from_breed(runtime: PetRuntime, event: object) -> None:
-    runtime.anchor_x = event.anchor_x  # type: ignore[attr-defined]
-    runtime.anchor_y = event.anchor_y  # type: ignore[attr-defined]
-    runtime.look_right = event.look_right  # type: ignore[attr-defined]
-    behavior = event.behavior  # type: ignore[attr-defined]
-    runtime.start_action(behavior if behavior in runtime.catalog.actions else "Stand")
-
-
-def apply_interaction_event(event: object) -> None:
-    target = event.target  # type: ignore[attr-defined]
-    if event.target_look and target.look_right == event.source_look_right:  # type: ignore[attr-defined]
-        target.look_right = not event.source_look_right  # type: ignore[attr-defined]
-    target_behavior = event.target_behavior  # type: ignore[attr-defined]
-    target.start_action(target_behavior if target_behavior in target.catalog.actions else "Stand")
-
-
-def pet_world_for_application(application: Gtk.Application) -> PetWorld:
-    world = getattr(application, "_neuro_hypr_shimeji_world", None)
-    if world is None:
-        world = PetWorld()
-        application._neuro_hypr_shimeji_world = world  # type: ignore[attr-defined]
-    return world
-
-
-def remember_window(application: Gtk.Application, window: Gtk.Window, *, parent=None) -> None:
-    manager = getattr(application, "_neuro_hypr_manager", None)
-    if manager is not None:
-        manager.register(window, parent=parent)
-        return
-    windows = getattr(application, "_neuro_hypr_shimeji_windows", None)
-    if windows is None:
-        windows = []
-        application._neuro_hypr_shimeji_windows = windows  # type: ignore[attr-defined]
-    windows.append(window)
-
-
-def forget_window(application: Gtk.Application, window: Gtk.Window) -> None:
-    windows = getattr(application, "_neuro_hypr_shimeji_windows", None)
-    if windows is None or window not in windows:
-        return
-    windows.remove(window)
-    if getattr(application, "_neuro_hypr_shimeji_window", None) is window:
-        application._neuro_hypr_shimeji_window = None  # type: ignore[attr-defined]
-    manager = getattr(application, "_neuro_hypr_manager", None)
-    if manager is not None:
-        manager.changed()
-    elif not windows:
-        application.quit()
-
-
-def load_image_set(collection: Path, image_set: str) -> tuple[ActionCatalog, BehaviorCatalog | None]:
-    actions_xml = collection / "img" / image_set / "conf" / "actions.xml"
-    behaviors_xml = collection / "img" / image_set / "conf" / "behaviors.xml"
-    catalog = load_action_catalog(actions_xml)
-    behavior_catalog = load_behavior_catalog(behaviors_xml) if behaviors_xml.is_file() else None
-    return catalog, behavior_catalog
 
 
 def sync_active_window(
@@ -538,13 +424,14 @@ class ScreenCoverShimejiWindow(Gtk.ApplicationWindow):
         draw_surface(cr, surface, rect.x, rect.y, frame.needs_horizontal_flip(look_right=self.runtime.look_right))
 
     def _apply_pending_transforms(self) -> None:
-        for event in self.runtime.pop_transform_events():
-            image_set = event.image_set if self._image_set_exists(event.image_set) else self.catalog.image_set_dir.name
-            catalog, behavior_catalog = load_image_set(self.collection, image_set)
+        def changed(catalog):
             self.catalog = catalog
             self.cache = SurfaceCache(catalog.image_set_dir)
             self.sound_player = make_sound_player(catalog)
-            self.runtime.apply_transform(catalog, behavior_catalog, event.behavior)
+            manager = getattr(self.get_application(), "_neuro_hypr_manager", None)
+            if manager is not None:
+                manager.changed()
+        apply_pending_transforms(self.runtime, self.collection, changed)
 
     def _image_set_exists(self, image_set: str) -> bool:
         return bool(image_set) and (self.collection / "img" / image_set / "conf" / "actions.xml").is_file()
@@ -858,27 +745,17 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
         return bool(image_set) and (self.collection / "img" / image_set / "conf" / "actions.xml").is_file()
 
     def _apply_pending_interactions(self) -> None:
-        for event in self.runtime.pop_interaction_events():
-            apply_interaction_event(event)
+        apply_pending_interactions(self.runtime)
 
     def _apply_pending_breeds(self) -> None:
         application = self.get_application()
         if application is None:
             self.runtime.pop_breed_events()
             return
-        for event in self.runtime.pop_breed_events():
-            image_set = event.image_set if self._image_set_exists(event.image_set) else self.catalog.image_set_dir.name
-            catalog, behavior_catalog = load_image_set(self.collection, image_set)
+        def spawn(event, catalog, behavior_catalog):
             child = SpriteLayerWindow(
-                application,
-                self.collection,
-                catalog,
-                self.monitor,
-                self.fps,
-                behavior_catalog,
-                move_active_window=self.move_active_window,
-                world=self.world,
-                debug_state=self.debug_state,
+                application, self.collection, catalog, self.monitor, self.fps, behavior_catalog,
+                move_active_window=self.move_active_window, world=self.world, debug_state=self.debug_state,
             )
             configure_runtime_from_breed(child.runtime, event)
             if child.runtime.window_action_active:
@@ -889,6 +766,7 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
             child._apply_geometry()
             remember_window(application, child, parent=self)
             child.start()
+        apply_pending_breeds(self.runtime, self.collection, spawn)
 
     def _on_close_request(self, _window: Gtk.Window) -> bool:
         self._closed = True

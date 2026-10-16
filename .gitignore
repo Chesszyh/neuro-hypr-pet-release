@@ -27,3 +27,5 @@ logs/
 *.PNG
 *.zip
 .publication/
+.venv-macos/
+dist/

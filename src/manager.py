@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
 import random
 from pathlib import Path
 from typing import Callable
 
-from src.hyprland import load_monitors, load_windows, select_monitor, visible_windows
-
-
-def preferences_path() -> Path:
-    return Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "neuro-hypr-pet" / "preferences.json"
+from src.paths import preferences_path
 
 
 def available_image_sets(collection: Path) -> tuple[str, ...]:
@@ -26,7 +21,7 @@ def load_selection(path: Path, available: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(name for name in data["image_sets"] if name in available)
 
 
-def save_selection(path: Path, names: tuple[str, ...], *, window_speed: float | None = None, allow_split: bool | None = None, split_probability: float | None = None) -> None:
+def save_selection(path: Path, names: tuple[str, ...], *, window_speed: float | None = None, fall_speed: float | None = None, allow_split: bool | None = None, split_probability: float | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     data["image_sets"] = names
@@ -35,13 +30,19 @@ def save_selection(path: Path, names: tuple[str, ...], *, window_speed: float | 
         data["split_probability"] = split_probability
     if window_speed is not None:
         data["window_speed"] = window_speed
+    if fall_speed is not None:
+        data["fall_speed"] = fall_speed
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
 
 
 class PetManager:
-    def __init__(self, application, collection: Path, factory: Callable, *, monitor: str = "auto", selection_path: Path | None = None) -> None:
+    def __init__(self, application, collection: Path, factory: Callable, *, monitor: str = "auto", selection_path: Path | None = None, desktop=None) -> None:
+        if desktop is None:
+            from src import hyprland
+            desktop = hyprland
+        self.desktop = desktop
         self.application = application
         self.collection = collection
         self.factory = factory
@@ -50,6 +51,7 @@ class PetManager:
         self.available = available_image_sets(collection)
         self.selected = load_selection(self.selection_path, self.available)
         self.window_speed = float(json.loads(self.selection_path.read_text()).get("window_speed", 1.5)) if self.selection_path.exists() else 1.5
+        self.fall_speed = max(.25, min(1.5, float(json.loads(self.selection_path.read_text()).get("fall_speed", .7)))) if self.selection_path.exists() else .7
         self.allow_split = json.loads(self.selection_path.read_text()).get("allow_split", True) if self.selection_path.exists() else True
         self.split_probability = json.loads(self.selection_path.read_text()).get("split_probability") if self.selection_path.exists() else None
         self.paused = False
@@ -78,7 +80,7 @@ class PetManager:
         if name not in self.available:
             raise ValueError(f"找不到素材 {name}，请检查 {self.collection / 'img'}")
         if monitor is None:
-            monitor = select_monitor(None if self.monitor in {"auto", "all"} else self.monitor)
+            monitor = self.desktop.select_monitor(None if self.monitor in {"auto", "all"} else self.monitor)
         pet = self.factory(name, monitor)
         self.register(pet)
         pet.start()
@@ -95,7 +97,7 @@ class PetManager:
     def spawn_selected(self) -> None:
         if not self.selected:
             return
-        monitors = load_monitors() if self.monitor == "all" else [select_monitor(None if self.monitor == "auto" else self.monitor)]
+        monitors = self.desktop.load_monitors() if self.monitor == "all" else [self.desktop.select_monitor(None if self.monitor == "auto" else self.monitor)]
         self.set_paused(False)
         for name in self.selected:
             for monitor in monitors:
@@ -108,6 +110,11 @@ class PetManager:
     def set_window_speed(self, speed: float) -> None:
         self.window_speed = max(0.5, min(3.0, speed))
         save_selection(self.selection_path, self.selected, window_speed=self.window_speed)
+        self.changed()
+
+    def set_fall_speed(self, speed: float) -> None:
+        self.fall_speed = max(.25, min(1.5, speed))
+        save_selection(self.selection_path, self.selected, fall_speed=self.fall_speed)
         self.changed()
 
     def set_split_defaults(self, enabled: bool, probability: float | None) -> None:
@@ -159,7 +166,7 @@ class PetManager:
 
     def interactive_windows(self):
         app_id = self.application.get_application_id()
-        return [window for window in visible_windows(load_monitors(), load_windows()) if window.class_name != app_id]
+        return [window for window in self.desktop.visible_windows(self.desktop.load_monitors(), self.desktop.load_windows()) if window.class_name != app_id]
 
     def interact(self, *, address: str | None = None, throw: bool = True, minimize: bool = False, pet=None) -> bool:
         windows = self.interactive_windows()
@@ -200,9 +207,8 @@ class PetManager:
                 pet.runtime.start_action("Stand")
                 pet.runtime.desired_active_window_rect = None
                 pet.window_motion.release()
-        from src.hyprland import WindowMotion
-        WindowMotion(self.application._neuro_hypr_window_originals).restore(load_windows(), load_monitors())
-        self.message = "已还原窗口"
+        result = self.desktop.WindowMotion(self.application._neuro_hypr_window_originals).restore(self.desktop.load_windows(), self.desktop.load_monitors())
+        self.message = result if isinstance(result, str) else "已还原窗口"
         self.changed()
 
     def cancel_minimizations(self) -> None:
@@ -211,10 +217,9 @@ class PetManager:
         self.minimizations.clear()
 
     def shutdown(self) -> None:
-        from src.hyprland import WindowMotion
         placements = {address: self.application._neuro_hypr_window_originals[address] for address in self.minimizations}
         self.cancel_minimizations()
         if placements:
-            WindowMotion(placements).restore(load_windows(), load_monitors())
+            self.desktop.WindowMotion(placements).restore(self.desktop.load_windows(), self.desktop.load_monitors())
         for pet in self.pets:
             pet.window_motion.release()

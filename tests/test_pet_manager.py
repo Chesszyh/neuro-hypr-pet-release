@@ -32,8 +32,7 @@ class FakePet:
         self.started = True
 
     def close(self):
-        with patch.dict(os.environ, {"NEURO_HYPR_SHIMEJI_PRELOADED": "1"}):
-            from tools.neuro_hypr_shimeji import forget_window
+        from src.controller import forget_window
         forget_window(self.manager.application, self)
 
 
@@ -57,7 +56,7 @@ class PetManagerTest(unittest.TestCase):
         self.manager.monitor = "all"
         self.manager.set_selection(["Neuron", "Eviling"])
         other = monitor_from_hyprctl({"name": "second", "x": 1600, "width": 1200, "height": 900})
-        with patch("src.manager.load_monitors", return_value=[MONITOR, other]):
+        with patch("src.hyprland.load_monitors", return_value=[MONITOR, other]):
             self.manager.spawn_selected()
         self.assertEqual([(pet.catalog.image_set_dir.name, pet.monitor.name) for pet in self.manager.pets],
                          [("Neuron", "test"), ("Neuron", "second"), ("Eviling", "test"), ("Eviling", "second")])
@@ -67,7 +66,7 @@ class PetManagerTest(unittest.TestCase):
         first = self.manager.spawn("Neuron", MONITOR)
         self.manager.set_paused(True)
         self.manager.set_selection(["Neuron", "Eviling"])
-        with patch("src.manager.select_monitor", return_value=MONITOR):
+        with patch("src.hyprland.select_monitor", return_value=MONITOR):
             self.manager.spawn_selected()
             self.manager.spawn_selected()
         self.assertFalse(self.manager.paused)
@@ -85,7 +84,7 @@ class PetManagerTest(unittest.TestCase):
                 raise ValueError("Failed to load Eviling")
             return factory(name, monitor)
         self.manager.factory = fail_eviling
-        with patch("src.manager.select_monitor", return_value=MONITOR):
+        with patch("src.hyprland.select_monitor", return_value=MONITOR):
             with self.assertRaisesRegex(ValueError, "Failed to load Eviling"):
                 self.manager.spawn_selected()
         self.assertEqual(self.manager.selected, ("Eviling", "Vedaling"))
@@ -154,8 +153,8 @@ class PetManagerTest(unittest.TestCase):
                                      "workspace": {"id": 1}, "class": "test.window"})
         manager_window = window_from_hyprctl({"address": "0xdef", "at": [200, 100], "size": [600, 400],
                                              "workspace": {"id": 1}, "class": "test.manager"})
-        with (patch("src.manager.load_monitors", return_value=[MONITOR]),
-              patch("src.manager.load_windows", return_value=[manager_window, target])):
+        with (patch("src.hyprland.load_monitors", return_value=[MONITOR]),
+              patch("src.hyprland.load_windows", return_value=[manager_window, target])):
             self.manager.interact(address=target.address, throw=False, pet=pet)
             pet.request_window_interaction.assert_called_with(target, throw=False, minimize=False)
             self.manager.interact(throw=True)

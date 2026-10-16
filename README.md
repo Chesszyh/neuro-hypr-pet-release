@@ -7,6 +7,8 @@ window whose mouse input region follows the visible pixels.
 
 [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md)
 
+macOS: see the [native application and setup guide](packaging/macos/README.md).
+
 ## Requirements
 
 - A Hyprland Wayland session with `hyprctl` available.
