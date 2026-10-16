@@ -187,8 +187,7 @@ class ShimejiEntrypointTest(unittest.TestCase):
         with (
             patch.object(entrypoint.Gtk, "Application", FakeApplication),
             patch.object(entrypoint, "install_css"),
-            patch.object(entrypoint, "load_action_catalog", return_value=catalog),
-            patch.object(entrypoint, "load_behavior_catalog", return_value=None),
+            patch.object(entrypoint, "load_image_set", return_value=(catalog, None)),
             patch.object(entrypoint, "select_monitor", return_value=monitor),
             patch.object(entrypoint, "load_monitors", return_value=[monitor, object()]),
             patch.object(entrypoint, "SpriteLayerWindow", FakeWindow),
