@@ -791,23 +791,28 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
         self.menu_popover.popup()
 
     def _fill_context_menu(self) -> None:
-        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.add_css_class("neuro-menu-card")
         card.set_size_request(232, -1)
 
-        title = Gtk.Label(label=self.catalog.image_set_dir.name.upper(), xalign=0)
+        title = Gtk.Label(label=f"🐾 {self.catalog.image_set_dir.name}", xalign=0)
         title.add_css_class("neuro-menu-title")
         card.append(title)
+
         application = self.get_application()
         manager = getattr(application, "_neuro_hypr_manager", None)
         if manager is not None:
-            manage = Gtk.Button(label="管理桌宠")
-            manage.connect("clicked", lambda _button: application.activate_action("manage", None))
-            card.append(manage)
-            resummon = Gtk.Button(label="再召唤同款")
-            resummon.connect("clicked", lambda _button: manager.resummon(self))
+            resummon = Gtk.Button(label="➕ 再召唤一只")
+            resummon.add_css_class("neuro-menu-action")
+            resummon.connect("clicked", lambda _button: (self.menu_popover.popdown(), manager.resummon(self)))
             card.append(resummon)
-        section = Gtk.Label(label="动作", xalign=0)
+
+            keep = Gtk.Button(label="🎯 只保留这只")
+            keep.add_css_class("neuro-menu-action")
+            keep.connect("clicked", lambda _button: (self.menu_popover.popdown(), manager.keep_one(self)))
+            card.append(keep)
+
+        section = Gtk.Label(label="⚡ 触发动作", xalign=0)
         section.add_css_class("neuro-menu-section")
         card.append(section)
 
@@ -830,7 +835,7 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_min_content_width(208)
-        scroll.set_max_content_height(244)
+        scroll.set_max_content_height(200)
         scroll.set_propagate_natural_height(True)
         scroll.set_child(action_list)
         card.append(scroll)
@@ -845,7 +850,7 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
         movement.connect("toggled", self._on_window_movement_toggled)
         card.append(movement)
         if self.window_motion.originals:
-            restore = Gtk.Button(label="还原搬动的窗口")
+            restore = Gtk.Button(label="↩️ 还原搬动的窗口")
             restore.add_css_class("neuro-menu-action")
             restore.connect("clicked", self._on_restore_windows)
             card.append(restore)
@@ -866,7 +871,7 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
             ]
             if companions:
                 card.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-                companion_section = Gtk.Label(label="伙伴", xalign=0)
+                companion_section = Gtk.Label(label="👯 伙伴联动", xalign=0)
                 companion_section.add_css_class("neuro-menu-section")
                 card.append(companion_section)
                 for image_set, label in companions:
@@ -876,9 +881,15 @@ class SpriteLayerWindow(Gtk.ApplicationWindow):
                     card.append(button)
         card.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
+        if manager is not None:
+            manage = Gtk.Button(label="⚙️ 管理面板…")
+            manage.add_css_class("neuro-menu-action")
+            manage.connect("clicked", lambda _button: (self.menu_popover.popdown(), application.activate_action("manage", None)))
+            card.append(manage)
+
         remove = Gtk.Button()
         remove.add_css_class("neuro-menu-remove")
-        remove_label = Gtk.Label(label="移除这一只", xalign=0)
+        remove_label = Gtk.Label(label="❌ 移除这只", xalign=0)
         remove_label.set_hexpand(True)
         remove.set_child(remove_label)
         remove.connect("clicked", self._on_remove_requested)
@@ -1079,35 +1090,42 @@ def install_css() -> None:
         .neuro-hypr-shimeji-window {
           background: transparent;
         }
+
+        /* Popover Context Menu */
         popover.neuro-pet-menu contents {
-          background: rgba(24, 27, 41, 0.92);
-          color: #f7f7fb;
-          font-size: 80%;
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: 16px;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+          background: rgba(24, 25, 38, 0.95);
+          color: #cdd6f4;
+          font-size: 85%;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 14px;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
         }
-        .neuro-menu-card { padding: 10px; }
+        .neuro-menu-card { padding: 8px; }
         .neuro-menu-title {
-          color: #f6b8dc;
-          font-size: 9.6px;
+          color: #f5c2e7;
+          font-size: 11px;
           font-weight: 800;
-          letter-spacing: 2px;
+          letter-spacing: 1.5px;
         }
         .neuro-menu-section {
-          color: rgba(255, 255, 255, 0.62);
-          font-size: 8.8px;
+          color: #a6adc8;
+          font-size: 10px;
+          font-weight: 700;
+          margin-top: 2px;
         }
         .neuro-menu-card button {
-          min-height: 24px;
-          padding: 4px 8px;
+          min-height: 26px;
+          padding: 4px 10px;
           border: 0;
-          border-radius: 9px;
+          border-radius: 7px;
           background: transparent;
-          color: #f7f7fb;
+          color: #cdd6f4;
           box-shadow: none;
         }
-        .neuro-menu-card button:hover { color: #f6b8dc; }
+        .neuro-menu-card button:hover {
+          color: #f5c2e7;
+          background: rgba(245, 194, 231, 0.12);
+        }
         .neuro-menu-card spinbutton,
         .neuro-menu-card spinbutton text,
         .neuro-menu-card checkbutton check {
@@ -1123,39 +1141,135 @@ def install_css() -> None:
           min-width: 20px;
           padding: 2px;
         }
-        .neuro-menu-remove { color: #ffb6c8; }
+        .neuro-menu-remove { color: #f38ba8; }
         .neuro-menu-remove:hover {
-          color: #ff8ba5;
+          color: #ff9eb6;
+          background: rgba(243, 139, 168, 0.15);
         }
         .neuro-menu-empty {
-          padding: 9px;
-          color: rgba(255, 255, 255, 0.62);
+          padding: 8px;
+          color: #6c7086;
         }
+
+        /* Manager Popup Window */
         window.neuro-manager-popup {
-          background: rgba(24, 27, 41, 0.97);
+          background: rgba(24, 25, 38, 0.96);
           background-image: none;
-          color: #f7f7fb;
-          border: 1px solid rgba(255, 255, 255, 0.18);
+          color: #cdd6f4;
+          border: 1px solid rgba(255, 255, 255, 0.14);
           border-radius: 14px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
         }
+        .neuro-header-title {
+          font-size: 16px;
+          font-weight: 800;
+          color: #cdd6f4;
+        }
+        .neuro-subtext {
+          font-size: 12px;
+          color: #a6adc8;
+        }
+        .neuro-empty-hint {
+          font-size: 12px;
+          color: #6c7086;
+          padding: 24px;
+        }
+
+        /* Badges / Pills */
+        .neuro-badge {
+          border-radius: 10px;
+          padding: 2px 8px;
+          font-size: 11px;
+          font-weight: 600;
+        }
+        .neuro-badge-sm {
+          font-size: 11px;
+        }
+        .neuro-badge-active {
+          background-color: rgba(166, 227, 161, 0.15);
+          color: #a6e3a1;
+        }
+        .neuro-badge-paused {
+          background-color: rgba(249, 226, 175, 0.15);
+          color: #f9e2af;
+        }
+        .neuro-badge-inactive {
+          background-color: rgba(108, 112, 134, 0.15);
+          color: #9399b2;
+        }
+        .neuro-badge-active-text {
+          color: #a6e3a1;
+        }
+        .neuro-badge-inactive-text {
+          color: #6c7086;
+        }
+
+        /* Cards & Container Rows */
+        .neuro-card {
+          background-color: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 10px;
+          padding: 10px 12px;
+        }
+        .neuro-material-row {
+          background-color: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 8px;
+          padding: 6px 10px;
+        }
+        .neuro-material-row:hover {
+          background-color: rgba(255, 255, 255, 0.06);
+          border-color: rgba(245, 194, 231, 0.2);
+        }
+        .neuro-avatar {
+          border-radius: 6px;
+        }
+        .neuro-status-text {
+          font-size: 11.5px;
+          color: #a6adc8;
+        }
+        .error-text {
+          color: #f38ba8;
+        }
+
+        /* Buttons & Controls */
         .neuro-manager-popup button {
           background-image: none;
           background-color: rgba(255, 255, 255, 0.08);
-          color: #f7f7fb;
+          color: #cdd6f4;
           min-height: 28px;
           border-radius: 7px;
-          border: 0;
-          padding: 2px 9px;
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          padding: 2px 10px;
         }
         .neuro-manager-popup button:hover,
         .neuro-manager-popup button:checked {
-          background-color: rgba(248, 187, 220, 0.2);
+          background-color: rgba(245, 194, 231, 0.2);
+          color: #f5c2e7;
         }
         .neuro-manager-popup button.suggested-action {
-          background-color: #b96899;
-          color: white;
+          background-color: #cba6f7;
+          color: #11111b;
+          font-weight: 700;
         }
-        .neuro-manager-popup button:disabled { opacity: 0.45; }
+        .neuro-manager-popup button.suggested-action:hover {
+          background-color: #d9b8ff;
+          color: #11111b;
+        }
+        .neuro-manager-popup button.destructive-action {
+          background-color: rgba(243, 139, 168, 0.12);
+          color: #f38ba8;
+        }
+        .neuro-manager-popup button.destructive-action:hover {
+          background-color: rgba(243, 139, 168, 0.25);
+          color: #ff9eb6;
+        }
+        .neuro-manager-popup button:disabled {
+          opacity: 0.45;
+        }
+        .neuro-manager-popup dropdown button {
+          background-color: rgba(255, 255, 255, 0.06);
+        }
         """
     )
     display = Gdk.Display.get_default()
@@ -1294,6 +1408,10 @@ def main(argv: list[str] | None = None) -> int:
             application.add_action(action)
         application._neuro_hypr_tray = PetTray(manager, show_manager)
         manager.spawn_selected()
+        if not manager.pets and not args.manage:
+            fallback = next(((name,) for name in ("Neuroling", "Neuron") if name in manager.available), manager.available[:1])
+            if fallback:
+                manager.spawn(fallback[0])
         if args.manage:
             show_manager()
         if args.duration > 0:

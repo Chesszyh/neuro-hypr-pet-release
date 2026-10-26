@@ -59,8 +59,7 @@ Find your monitor name:
 hyprctl monitors
 ```
 
-The default starts the saved pending image sets on the focused output, initially
-Neuroling when available. An empty selection starts the tray without pets. Use `--monitor all` to start the selected sets on each connected output.
+The default starts the saved pending image sets on the focused output; if the queue is empty or on first run, it automatically spawns the first available image set (such as Neuroling). If no assets are installed, it starts the tray without pets. Use `--monitor all` to start the selected sets on each connected output.
 Repeat `--image-set` to choose multiple sets:
 
 ```bash
@@ -79,21 +78,28 @@ Available animations and interactions depend on the imported image set. Tutel,
 Vedal, and the extended Neuron/Eviling actions require a separate collection.
 
 Tap a hotspot for its petting action. Hold and move to drag, then release to
-throw. Right-click to choose a behavior, summon Evil or Tutel, change outputs,
-enable window movement, restore moved windows, or remove that pet. Tutel and
+throw. Right-click to open a styled context menu to choose a behavior,
+summon companions (Evil or Tutel), change outputs, enable window movement,
+restore moved windows, keep only this pet, or remove that pet. Tutel and
 Vedal count as the same companion after transformation.
 
-Click the tray icon for a small popup near the cursor. It uses a Wayland desktop
-layer and does not occupy the tiling layout. Select and summon multiple image
-sets, summon another of the same pet, make all pets follow the cursor, keep one,
-pause/resume, or remove all. Select all or clear all with one click. Summoning
-selected sets resumes the pets and clears successful choices; unfinished choices
-remain checked. Image-set choices are saved automatically to
+Click the tray icon for a popup near the cursor. It uses a Wayland desktop
+layer and does not occupy the tiling layout. A persistent status badge displays
+the active pet count and runtime state. The character manager presents a modern
+card list with avatar thumbnails and status badges, allowing 1-click single-set
+summoning via '+ 召唤' (+ Summon) on each card. It also provides batch controls
+('全部召唤' / Summon all, '清除勾选' / Clear selection), direct ZIP archive import
+('导入素材包 (.zip)'), and quick links to online materials. Additional quick controls
+include summoning another of the same pet, making all pets follow the cursor,
+keeping one, pause/resume, and removing all pets. Summoning selected sets resumes
+the pets and clears successful choices; unfinished choices remain checked.
+Image-set choices and preferences are saved automatically to
 `~/.config/neuro-hypr-pet/preferences.json`, respecting `XDG_CONFIG_HOME`.
 Close the popup with its close button or Esc.
 
 Right-click a pet to change that pet's split permission and automatic split
-probability. The tray's **桌宠** (Pets) tab edits the same per-pet settings,
+probability. The tray's **桌宠设置** (Pet settings) tab edits the same per-pet settings
+along with pet cards and a **下落速度** (Fall speed) selector (0.5×–3.0×, default 1.0×),
 including separate settings for multiple pets of the same image set.
 **应用到当前全部** (Apply to all current pets) changes the current pets once;
 individual edits afterward remain independent. **新召唤默认值** (New summon
@@ -164,8 +170,8 @@ use that popup to summon pets or quit before starting a trial.
   pose sound effects in the same application.
 - Multiple outputs, menu transfers, and throws across adjacent outputs, with
   recovery to a remaining output when a display is removed.
-- A tray popup, remembered image-set selection, multiple sets at startup,
-  same-pet summons, group cursor following, pause, and batch controls.
+- A modernized tray manager with character card previews, 1-click summoning,
+  ZIP archive import, fall speed control, group cursor following, pause, and batch controls.
 - Explicit carry/throw actions for selected windows or a random throw, including
   unfocused and tiled targets, adjustable speed, and throw-to-minimize.
 - Autonomous movement of floating windows, enabled through the pet menu or

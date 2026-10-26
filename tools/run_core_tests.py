@@ -10,6 +10,7 @@ CORE_MODULES = (
     "assets", "hyprland", "neuroling_regressions", "neuroling_wpets", "pet_manager",
     "shimeji_model", "shimeji_runtime", "shimeji_service", "sound", "split_setting",
     "controller", "paths", "macos_coordinates", "macos_accessibility", "macos_controller", "macos_window_motion", "macos_sound", "macos_sprite", "macos_desktop", "macos_manager_ui",
+    "manager_ui",
 )
 
 if __name__ == "__main__":
