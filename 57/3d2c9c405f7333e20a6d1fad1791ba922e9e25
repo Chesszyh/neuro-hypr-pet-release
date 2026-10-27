@@ -1,0 +1,21 @@
+packaging/macos/licenses/libffi/LICENSE
+  s_f9ad3a15c9bd9f::t_358ad26471e664 1-21
+packaging/macos/licenses/python/LICENSE.txt
+  s_f9ad3a15c9bd9f::t_e9bbb7d977177b 1-277
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "573d2c9c405f7333e20a6d1fad1791ba922e9e25",
+  "prompts": {},
+  "sessions": {
+    "s_f9ad3a15c9bd9f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17d72-4e67-70d2-8ccd-59c7720f7b06",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Chesszyh <chesszyh987@gmail.com>"
+    }
+  }
+}
