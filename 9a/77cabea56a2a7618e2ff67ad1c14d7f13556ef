@@ -1,0 +1,25 @@
+packaging/macos/README.md
+  s_f9ad3a15c9bd9f::t_536439438de602 1-41,46,50-52,92
+README.zh-CN.md
+  s_f9ad3a15c9bd9f::t_7751364b9cd8df 10,12,59,133-151,184
+packaging/macos/build.sh
+  s_f9ad3a15c9bd9f::t_e2a1b9669f46ea 1-32
+README.md
+  s_f9ad3a15c9bd9f::t_743c9312afe256 10,12,62,161-182,226-227
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9a77cabea56a2a7618e2ff67ad1c14d7f13556ef",
+  "prompts": {},
+  "sessions": {
+    "s_f9ad3a15c9bd9f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17d72-4e67-70d2-8ccd-59c7720f7b06",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Chesszyh <chesszyh987@gmail.com>"
+    }
+  }
+}
