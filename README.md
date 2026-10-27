@@ -7,9 +7,9 @@ window whose mouse input region follows the visible pixels.
 
 [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md)
 
-macOS: see the [native application and setup guide](packaging/macos/README.md).
+macOS installation: [Download the app and install](packaging/macos/README.md).
 
-## Requirements
+## Linux requirements
 
 - A Hyprland Wayland session with `hyprctl` available.
 - Python 3 with PyGObject (`gi`), Pycairo (`cairo`), GTK4, and the
@@ -59,7 +59,7 @@ Find your monitor name:
 hyprctl monitors
 ```
 
-The default starts the saved pending image sets on the focused output; if the queue is empty or on first run, it automatically spawns the first available image set (such as Neuroling). If no assets are installed, it starts the tray without pets. Use `--monitor all` to start the selected sets on each connected output.
+The default starts the saved pending image sets on the focused output; if the queue is empty or on first run, it automatically spawns the first available image set (such as Neuroling). Import at least one usable image set before starting; without one, the program reports an error and exits. Use `--monitor all` to start the selected sets on each connected output.
 Repeat `--image-set` to choose multiple sets:
 
 ```bash
@@ -158,6 +158,28 @@ Startup options and the trial duration apply when no instance is running.
 If the application is already running, another invocation opens its manager;
 use that popup to summon pets or quit before starting a trial.
 
+## Updating and manual installation
+
+The direct launch above needs no compilation. For an application-menu entry or
+login startup, install the user service below. It runs from this checkout, so
+keep the repository directory after installation.
+
+Quit the program or stop its user service, then update from the repository root:
+
+```bash
+git pull --ff-only
+```
+
+Install any new system dependencies listed above. Direct-launch users can run the
+launch command again; service users should refresh the service and menu entry:
+
+```bash
+python3 tools/neuro_hypr_shimeji.py --monitor auto --install-user --start
+```
+
+Imported artwork and saved preferences live outside the checkout and are retained
+when updating the code.
+
 ## Features and compatibility
 
 - Walking, running, jumping, falling, edge climbing, and landing animations.
@@ -201,8 +223,8 @@ python3 tools/neuro_hypr_shimeji.py \
 The installer writes `~/.config/systemd/user/neuro-hypr-pet-shimeji.service` and
 a **Neuroling** application-menu entry that opens the same tray popup. The service
 reads the saved pending image-set selection at startup; passing `--image-set` during
-installation updates that selection. Successful summons clear it, so subsequent
-service starts show only the tray until you summon pets again. Run the installer
+installation updates that selection. Successful summons clear it; subsequent
+service starts summon Neuroling, Neuron, or the first other available image set. Run the installer
 again to update the monitor, frame rate, and other launch arguments. Service generation is defined by
 `render_shimeji_user_service()` in [service.py](src/service.py).
 

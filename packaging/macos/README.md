@@ -1,13 +1,55 @@
-# macOS native application and capability probe
+# macOS installation and development
+
+## 安装应用 / Install the app
+
+从 [Releases](https://github.com/Chesszyh/neuro-hypr-pet-release/releases) 下载与 Mac
+架构匹配的 Neuro Pet `.dmg`。打开磁盘映像，将 **Neuro Pet.app** 拖入 **Applications**，
+再从“应用程序”打开。应用内含 Python 与依赖，不需要安装开发环境。
+硬件架构与最低系统版本以对应 Release 说明为准。
+
+Download the Neuro Pet `.dmg` for your Mac from
+[Releases](https://github.com/Chesszyh/neuro-hypr-pet-release/releases), open it, and
+drag **Neuro Pet.app** into **Applications**. Launch it from Applications; Python
+and dependencies are bundled. See the release notes for supported hardware and macOS.
+
+未经过 Apple 公证的版本首次打开可能被系统拦截。尝试打开一次后，在“系统设置 → 隐私与安全性”中
+找到 Neuro Pet，选择“仍要打开”。参见 [Apple 的打开应用说明](https://support.apple.com/102445)。
+For builds without Apple notarization, attempt to open the app, then use
+**System Settings → Privacy & Security → Open Anyway** for Neuro Pet.
+
+从 [Neurolings 素材页](https://neurofumo.itch.io/neurolings)下载 **Neurolings v1.zip**，
+在管理面板中导入 ZIP，再选择角色召唤。素材不包含在应用内。关闭管理窗口后仍可通过菜单栏图标打开。
+窗口读取和搬运需要在“隐私与安全性 → 辅助功能”中允许 Neuro Pet；基础桌宠使用不需要开启窗口搬运。
+
+Download **Neurolings v1.zip** from the artwork page, import it in the manager, and
+summon a character. Artwork is separate from the application. Use the menu-bar
+icon to reopen the manager. Window detection and movement require Accessibility
+permission for Neuro Pet in Privacy & Security.
+
+更新时退出 Neuro Pet，再用新版替换“应用程序”中的旧版。素材和设置保留在
+`~/Library/Application Support/neuro-hypr-pet/`。卸载时退出并移除应用即可；
+如已开启“登录时自动启动”，先在管理面板关闭。
+To update, quit the app and replace it in Applications. Artwork and preferences
+remain in the Application Support directory. To uninstall, disable login startup
+if enabled, quit, and remove the app.
+
+## Build from source
+
+```bash
+python3.13 -m venv .venv-macos
+.venv-macos/bin/python -m pip install -r packaging/macos/requirements.lock
+```
 
 Build and run the native pet application from the repository root:
 
 ```bash
-.venv-macos/bin/python packaging/macos/setup.py --pet-app py2app
+packaging/macos/build.sh
 "dist/Neuro Pet.app/Contents/MacOS/Neuro Pet" --collection /path/to/collection
 ```
 
-Create the environment and install the locked dependencies below before building.
+Create the environment and install the locked dependencies above before building.
+`build.sh` creates the application and a DMG in `dist/`. It uses `local-codesign`
+when installed, or an ad-hoc signature otherwise. This does not perform Apple notarization.
 The application can also run as `python tools/neuro_macos_shimeji.py` with the same
 options. `--image-set Neuron` chooses an initial pet; repeat the option for more
 materials. Without imported materials, the manager offers ZIP import. Default
@@ -47,7 +89,7 @@ synthetic PNG and two dedicated blank windows.
 From the repository root, using Python 3.13 on macOS:
 
 ```bash
-python3 -m venv .venv-macos
+python3.13 -m venv .venv-macos
 .venv-macos/bin/python -m pip install -r packaging/macos/requirements.lock
 .venv-macos/bin/python tools/run_core_tests.py
 .venv-macos/bin/python tools/neuro_macos_diagnose.py

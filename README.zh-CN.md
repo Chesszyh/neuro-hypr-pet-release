@@ -7,9 +7,9 @@ Shimeji `actions.xml` / `behaviors.xml`。每只桌宠使用一个与图片大�
 
 [English](README.md) · [贡献指南](CONTRIBUTING.md)
 
-macOS：[原生应用与安装指南](packaging/macos/README.md)。
+macOS 安装：[下载应用与安装指南](packaging/macos/README.md)。
 
-## 依赖
+## Linux 依赖
 
 - Hyprland Wayland 会话，能够调用 `hyprctl`。
 - Python 3、PyGObject（`gi`）、Pycairo（`cairo`）、GTK4，以及
@@ -56,7 +56,7 @@ python3 tools/import_neurolings.py "$HOME/Downloads/Neurolings v1.zip"
 hyprctl monitors
 ```
 
-默认在当前聚焦屏幕启动保存的待召唤素材；若队列为空或首次运行，则自动召唤已安装的首个素材（如 Neuroling）。若完全无可用素材则仅启动托盘。
+默认在当前聚焦屏幕启动保存的待召唤素材；若队列为空或首次运行，则自动召唤已安装的首个素材（如 Neuroling）。首次启动前必须导入至少一种可用素材；没有可用素材时程序会提示错误并退出。
 指定 `--monitor all`
 可在每个已连接屏幕启动所选素材；重复 `--image-set` 可选择多种素材：
 
@@ -130,6 +130,25 @@ python3 tools/neuro_hypr_shimeji.py --image-set Neuroling --monitor auto --durat
 启动参数和试运行时长在没有已有实例时生效。程序已运行时，再次执行只打开管理浮窗；
 可在浮窗召唤桌宠，或先退出已有实例再试运行。
 
+## 更新与手动安装
+
+上述直接运行方式即可使用，无需编译。需要应用菜单入口或登录启动时，按下方“用户级服务”安装。
+服务直接引用当前仓库目录，安装后请保留该目录。
+
+更新前退出程序或停止用户服务，然后在仓库根目录执行：
+
+```bash
+git pull --ff-only
+```
+
+按“依赖”一节补齐新增系统依赖。直接运行用户重新执行启动命令；服务用户执行：
+
+```bash
+python3 tools/neuro_hypr_shimeji.py --monitor auto --install-user --start
+```
+
+这会更新服务和应用菜单入口。导入的素材和已保存的偏好保存在仓库之外，更新代码不会删除它们。
+
 ## 功能与兼容范围
 
 - 走路、跑步、跳跃、下落、边缘攀爬和落地动画。
@@ -162,8 +181,7 @@ python3 tools/neuro_hypr_shimeji.py \
 
 安装器写入 `~/.config/systemd/user/neuro-hypr-pet-shimeji.service`，以及应用菜单中的
 “Neuroling”入口，后者打开同一个托盘浮窗。服务启动时读取保存的待召唤选择；
-安装时传入 `--image-set` 会更新该选择。召唤成功后选择清空，因此后续服务启动通常
-只显示托盘，需要再次召唤。重新运行安装器可更新显示器、帧率等启动参数。
+安装时传入 `--image-set` 会更新该选择。召唤成功后选择清空；后续服务启动会优先召唤 Neuroling、Neuron 或其他首个可用素材。重新运行安装器可更新显示器、帧率等启动参数。
 服务生成规则由
 [service.py](src/service.py) 的 `render_shimeji_user_service()` 定义。
 
